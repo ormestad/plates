@@ -1,29 +1,4 @@
 <?php
-// intressant... https://github.com/LazarSoft/jsqrcode
-// http://davidscotttufts.com/2009/03/31/how-to-create-barcodes-in-php/
-// https://davidwalsh.name/html5-camera-video-iphone
-
-
-/* ------------------------------------------------------
-
-Location barcodes
-=================
-
-Full position barcode
-R[NNNN]X[NN]Y[NN]
-
-Rack location only
-R[NNNN]_
-
-Storage unit only
-S[NNNN]
-
-S: Storage unit
-R: Rack
-X/Y: position
-
------------------------------------------------------- */
-
 require 'global.php';
 
 $ALERTS=array();
