@@ -1,0 +1,53 @@
+table.rack {
+	width: 100%;
+	border: 1px solid #ccc;
+	background-color: #eee;
+	padding: 5px;
+	table-layout: fixed;
+}
+
+table.rack td {
+	padding: 5px;
+	border: 4px solid #aaa;
+	text-align: center;
+}
+
+table.rack td.available {
+	padding: 5px;
+	border: 4px solid #3c3;
+}
+
+table.rack td.full {
+	padding: 5px;
+	border: 4px solid red;
+}
+
+table.rack th {
+	padding: 5px;
+	background-color: #eee;
+}
+
+table.rack td.selected {
+	background-color: #ffc;
+}
+
+table.rack td.selected.full {
+	background-color: #fcc;
+}
+
+code.selected {
+	background-color: #3f3;
+}
+
+table.log td {
+	font-size: 0.8em;
+}
+
+table.log td:last-child {
+	white-space: nowrap;
+}
+
+table caption {
+	text-align: left;
+	background-color: #eee;
+}
