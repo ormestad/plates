@@ -24,10 +24,12 @@ CREATE TABLE `racks` (
   `rack_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `rack_name` varchar(30) DEFAULT NULL,
   `rack_description` text,
+  `rack_status` varchar(15) DEFAULT NULL,
   `storage_id` int(11) DEFAULT NULL,
-  `cols` int(11) DEFAULT NULL,
-  `rows` int(11) DEFAULT NULL,
+  `cols` int(2) DEFAULT NULL,
+  `rows` int(2) DEFAULT NULL,
   `slots` int(11) DEFAULT NULL,
+  `log` text,
   PRIMARY KEY (`rack_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
