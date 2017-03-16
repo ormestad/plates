@@ -434,9 +434,10 @@ class htmlForm {
 		$this->children[]=$output;
 	}
 	
-	public function addSelect($label,$name,$data,$selected=FALSE) {
+	public function addSelect($label,$name,$data,$selected=FALSE,$attrib=array()) {
 		$output=new htmlElement('select');
 		$output->set('name',$name);
+		if(count($attrib)) { $output->set($attrib); }
 		foreach($data as $key => $value) {
 			$checkboxID=$name.'_'.$key;
 			$attrib=array("value" => $key);

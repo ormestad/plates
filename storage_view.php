@@ -14,6 +14,7 @@ if(isset($_GET['id'])) {
 						'identifier'	=> "<a href=\"rack_view.php?id=$rack_id\"><code>".$rack_id.'</code>', 
 						'name'			=> $rack['rack_name'], 
 						'description'	=> $rack['rack_description'], 
+						'status'		=> formatStorageStatus($rack['rack_status']), 
 						'columns'		=> $rack['cols'], 
 						'rows'			=> $rack['rows'], 
 						'slots'			=> $rack['slots'], 
@@ -80,7 +81,7 @@ if(isset($_GET['id'])) {
 		<table class="unstriped">
 			<tr>
 				<td><strong>ID</strong></td>
-				<td><?php echo $storage_id; ?></td>
+				<td><code><?php echo $storage_id; ?></code></td>
 			</tr>
 			<tr>
 				<td><strong>Name</strong></td>
@@ -130,7 +131,7 @@ if(isset($_GET['id'])) {
 			<div class="card-section">
 				<div class="button-group">
 					<a href="storage_edit.php?id=<?php echo $storage_id; ?>" class="button"><i class="fi-widget"></i> Edit storage</a>
-					<a href="#" class="button"><i class="fi-plus"></i> Add rack</a>
+					<a href="rack_edit.php?id=<?php echo $storage_id; ?>" class="button"><i class="fi-plus"></i> Add rack</a>
 				</div>
 			</div>
 		</div>

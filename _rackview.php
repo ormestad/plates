@@ -10,12 +10,12 @@ if(isset($_POST['position'])) {
 		echo $table->render();
 	} elseif($position['type']=='rack') {
 		$rack=getRack($position['rack_id'],FALSE);
-		$table=new htmlTable('Rack '.$rack['data']['rack_name'].' in '.$rack['storage']['storage_name'],array('class' => 'rack'));
+		$table=new htmlTable('Rack '.$rack['data']['rack_name'].' in '.$rack['storage']['storage_name'].' '.formatStorageStatus($rack['data']['rack_status']),array('class' => 'rack'));
 		$table->addData(parseRackLayout($rack['layout']));
 		echo $table->render();
 	} elseif($position['type']=='storage') {
 		$storage=getStorage($position['storage_id']);
-		$table=new htmlTable('Racks in '.$storage['data']['storage_name'],array('class' => 'rack'));
+		$table=new htmlTable('Racks in '.$storage['data']['storage_name'].' '.formatStorageStatus($storage['data']['storage_status']),array('class' => 'rack'));
 		$table->addData(parseStorageLayout($storage));
 		echo $table->render();
 	}

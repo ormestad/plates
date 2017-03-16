@@ -389,12 +389,14 @@ function getRack($rack_id,$plate_id=FALSE,$xpos=FALSE,$ypos=FALSE) {
 							'selected'	=> $plate_id==$plate_data['plate_id']
 						);
 					}
-
+					
+					// the key 'full' will be set if number of plates equals number of slots (if slots is set)
+					// OR if the rack_status is set to disabled, all cells will be defined as full
 					$cells[]=array(
 						'position'	=> $position, 
 						'plates'	=> $plates, 
 						'selected'	=> ($col==$xpos && $row==$ypos), 
-						'full'		=> count($plates)==$rack_data['slots']
+						'full'		=> ((count($plates)==$rack_data['slots']) || ($rack_data['rack_status']=='disabled'))
 					);
 				}
 				$layout[]=$cells;

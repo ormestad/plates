@@ -14,6 +14,10 @@ if(isset($_GET['id'])) {
 
 			$table_layout=new htmlTable('Layout of rack'.$rack['data']['rack_name'],array('class' => 'rack'));
 			$table_layout->addData(parseRackLayout($rack['layout'],FALSE));
+
+			$log=new htmlTable('Log',array('class' => 'log'));
+			$log->addData(parseLog($rack['data']['log']));
+			$loghtml=$log->render();
 		} else {
 			// Storage ID does not exist
 		}
@@ -62,7 +66,7 @@ if(isset($_GET['id'])) {
 		<table class="unstriped">
 			<tr>
 				<td><strong>ID</strong></td>
-				<td><?php echo $rack_id; ?></td>
+				<td><code><?php echo $rack_id; ?></code></td>
 			</tr>
 			<tr>
 				<td><strong>Name</strong></td>
@@ -70,7 +74,11 @@ if(isset($_GET['id'])) {
 			</tr>
 			<tr>
 				<td><strong>Storage unit</strong></td>
-				<td><?php echo $rack['storage']['storage_name']; ?></td>
+				<td><?php echo $rack['storage']['storage_name']; ?> <a href="storage_view.php?id=<?php echo renderStorageID($rack['storage']) ?>"><code><?php echo renderStorageID($rack['storage']) ?></code></a></td>
+			</tr>
+			<tr>
+				<td><strong>Status</strong></td>
+				<td><?php echo formatStorageStatus($rack['data']['rack_status']); ?></td>
 			</tr>
 		</table>
 	</div>
@@ -124,11 +132,13 @@ if(isset($_GET['id'])) {
 			</div>
 			<div class="card-section">
 				<div class="button-group">
-					<a href="storage_edit.php?id=<?php echo $storage_id; ?>" class="button"><i class="fi-widget"></i> Edit storage</a>
-					<a href="#" class="button"><i class="fi-plus"></i> Add rack</a>
+					<a href="rack_edit.php?id=<?php echo $rack_id; ?>" class="button"><i class="fi-widget"></i> Edit rack</a>
+					<a href="rack_move.php?id=<?php echo $rack_id; ?>" class="button"><i class="fi-plus"></i> Move rack</a>
 				</div>
 			</div>
 		</div>
+
+		<?php echo $loghtml; ?>
 	</div>
 </div>
 
