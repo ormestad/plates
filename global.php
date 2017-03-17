@@ -97,6 +97,7 @@ function parseLog($json,$type='plate') {
 	
 				case "check_out":
 				case "update":
+				case "move":
 					$action="<span class=\"warning label\">".$log_data['action']."</span>";
 				break;
 
