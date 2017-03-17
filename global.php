@@ -302,12 +302,14 @@ function renderPositionID($plate_data) {
 }
 
 function renderStorageID($storage_data) {
-	$result='S'.sprintf('%04d',$storage_data['storage_id']);
+	$id=is_array($storage_data) ? $storage_data['storage_id'] : $storage_data;
+	$result='S'.sprintf('%04d',$id);
 	return $result;
 }
 
 function renderRackID($rack_data) {
-	$result='R'.sprintf('%04d',$rack_data['rack_id']).'_';
+	$id=is_array($rack_data) ? $rack_data['rack_id'] : $rack_data;
+	$result='R'.sprintf('%04d',$id).'_';
 	return $result;
 }
 
@@ -397,7 +399,7 @@ function getRack($rack_id,$plate_id=FALSE,$xpos=FALSE,$ypos=FALSE) {
 						'position'	=> $position, 
 						'plates'	=> $plates, 
 						'selected'	=> ($col==$xpos && $row==$ypos), 
-						'full'		=> ((count($plates)==$rack_data['slots']) || ($rack_data['rack_status']=='disabled'))
+						'full'		=> ((count($plates)==$rack_data['slots'] && $rack_data['slots']>0) || ($rack_data['rack_status']=='disabled'))
 					);
 				}
 				$layout[]=$cells;

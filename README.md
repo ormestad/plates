@@ -19,6 +19,7 @@ Login using password is not required. Users enter their scilifelab email address
 ## Back end
 
 Tested on Apache (MAMP), PHP 7.1.1 and MySQL 5.6.35
+
 Barcode generation: https://github.com/davidscotttufts/php-barcode
 
 ## Front end
