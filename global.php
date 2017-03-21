@@ -583,17 +583,46 @@ function findProjectByName($query) {
 function showProjectData($project) {
 	$platesearch=plateFind($project['limsid']);
 	$libprepdata=parseLibprep($project['udf']['Library construction method']);
+	$status=getProjectStatus($project);
 
 	$projectcard=new zurbCard();
 	$projectdata=new htmlList('ul',array('class' => 'no-bullet'));
+	$projectdata->listItem('Project status: '.$status['html']);
 	$projectdata->listItem('Input material: '.$libprepdata['input']);
 	$projectdata->listItem('Library prep: '.$libprepdata['type']);
+	
 	$projectcard->divider('<strong>Selected project</strong> '.$project['limsid'].', '.$project['name'].' ('.$project['udf']['Customer project reference'].")");
 	$projectcard->section($projectdata->render());
 	$projectcard->divider('Registered plates matching: '.$project['limsid']);
 	$projectcard->section($platesearch['html']);
 	
 	return $projectcard->render();
+}
+
+// Evaluate project status based on dates from LIMS
+function getProjectStatus($project) {
+	if(isset($project['open-date'])) {
+		if(isset($project['udf']['Queued'])) {
+			if(isset($project['close-date'])) {
+				if(isset($project['udf']['Aborted'])) {
+					$status='aborted';
+				} else {
+					$status='closed';
+				}
+			} else {
+				$status='ongoing';
+			}
+		} else {
+			$status='reception_control';
+		}
+	} else {
+		$status='pending';
+	}
+	
+	return array(
+		'status'	=> $status, 
+		'html'		=> "<span class=\"label $status\">".ucfirst(str_replace('_',' ',$status)).'</span>'
+	);
 }
 
 // Fetch all projects from StatusDB
