@@ -111,17 +111,17 @@ if(isset($_GET['id'])) {
 			</div>
 
 			<ul class="tabs" data-tabs id="example-tabs">
-				<li class="tabs-title is-active"><a href="#panel1" aria-selected="true">Rack layout</a></li>
-				<li class="tabs-title"><a href="#panel2">Rack content</a></li>
+				<li class="tabs-title is-active"><a href="#panel1" aria-selected="true">Rack content</a></li>
+				<li class="tabs-title"><a href="#panel2">Rack layout</a></li>
 			</ul>
 			
 			<div class="tabs-content" data-tabs-content="example-tabs">
 				<div class="tabs-panel is-active" id="panel1">
-					<?php echo $table_layout->render(); ?>
+					<?php echo $table_content->render(); ?>
 				</div>
 				
 				<div class="tabs-panel" id="panel2">
-					<?php echo $table_content->render(); ?>
+					<?php echo $table_layout->render(); ?>
 				</div>
 			</div>		
 		</div>
