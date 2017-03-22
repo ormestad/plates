@@ -42,9 +42,6 @@ if(isset($_POST['user_email']) && $user=checkUser($_POST['user_email'])) {
 						}
 					}
 				}
-				
-				// more statuses? destroyed/returned?
-				
 			} else {
 				// Plate is not in database
 
@@ -110,6 +107,7 @@ if(isset($_POST['user_email']) && $user=checkUser($_POST['user_email'])) {
 	}
 } else {
 	$plate=FALSE;
+	$ALERTS[]=setAlerts("Invalid user name");
 }
 
 // Build page
@@ -217,7 +215,7 @@ if($plate) {
 			$rackhtml=$rackcard->render();
 
 			// Check out plate
-			$theform->addInput("Verify plate ID before proceeding",array("type" => "text", "name" => "plate_verify", "value" => ""));
+			$theform->addInput("Verify plate ID before proceeding",array("type" => "text", "name" => "plate_verify", "value" => "", "autocomplete" => "off"));
 			$theform->addInput(FALSE,array("type" => "submit", "name" => "submit", "value" => "Check out plate", "class" => "button"));
 			$theform->addInput(FALSE,array("type" => "submit", "name" => "return", "value" => "Return plate", "class" => "warning button"));
 			$theform->addInput(FALSE,array("type" => "submit", "name" => "destroy", "value" => "Destroy plate", "class" => "alert button"));
@@ -259,13 +257,13 @@ if($plate) {
 			$projectcard->section($search['html']);
 			$projecthtml=$projectcard->render();
 		}
-		$theform->addInput("Operator",array("type" => "text", "name" => "user_email", "value" => $user['user_email'], "required" => "", "id" => "user_email", "autocomplete" => "off"));
+		$theform->addInput("Operator (use your SciLifeLab email address)",array("type" => "text", "name" => "user_email", "value" => $user['user_email'], "required" => "", "id" => "user_email", "autocomplete" => "off"));
 	} else {
 		$theform->addText('Manage plates by scanning plate barcode or search using plate/project ID or name.');
-		$theform->addInput("Operator (use your scilifelab email address)",array("type" => "text", "name" => "user_email", "value" => "", "required" => "", "id" => "user_email", "autocomplete" => "off"));
+		$theform->addInput("Operator (use your SciLifeLab email address)",array("type" => "text", "name" => "user_email", "value" => "", "required" => "", "id" => "user_email", "autocomplete" => "off"));
 	}
 	
-	$theform->addInput("Plate",array("type" => "text", "name" => "plate", "value" => $plate, "required" => "", "id" => "plate"));
+	$theform->addInput("Plate",array("type" => "text", "name" => "plate", "value" => $plate, "required" => "", "id" => "plate", "autocomplete" => "off"));
 	$theform->addInput(FALSE,array("type" => "submit", "name" => "submit", "value" => "Next", "class" => "button"));
 }
 
