@@ -258,13 +258,15 @@ if($plate) {
 			$projecthtml=$projectcard->render();
 		}
 		$theform->addInput("Operator (use your SciLifeLab email address)",array("type" => "text", "name" => "user_email", "value" => $user['user_email'], "required" => "", "id" => "user_email", "autocomplete" => "off"));
+		$theform->addInput("Plate",array("type" => "text", "name" => "plate", "value" => $plate, "id" => "plate", "autocomplete" => "off"));
+		$theform->addInput(FALSE,array("type" => "submit", "name" => "submit", "value" => "Next", "class" => "button"));
+		$theform->addInput(FALSE,array("type" => "submit", "name" => "cancel", "value" => "Cancel", "class" => "secondary button"));
 	} else {
 		$theform->addText('Manage plates by scanning plate barcode or search using plate/project ID or name.');
 		$theform->addInput("Operator (use your SciLifeLab email address)",array("type" => "text", "name" => "user_email", "value" => "", "required" => "", "id" => "user_email", "autocomplete" => "off"));
+		$theform->addInput("Plate",array("type" => "text", "name" => "plate", "value" => $plate, "required" => "", "id" => "plate", "autocomplete" => "off"));
+		$theform->addInput(FALSE,array("type" => "submit", "name" => "submit", "value" => "Next", "class" => "button"));
 	}
-	
-	$theform->addInput("Plate",array("type" => "text", "name" => "plate", "value" => $plate, "required" => "", "id" => "plate", "autocomplete" => "off"));
-	$theform->addInput(FALSE,array("type" => "submit", "name" => "submit", "value" => "Next", "class" => "button"));
 }
 
 // Render Page
