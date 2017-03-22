@@ -2,7 +2,7 @@ $(document).foundation();
 
 $(document).ready(function() {
 	// Automatically focus on first input field in all forms
-	$('form').find('*').filter(':input:visible:first').focus();
+	$('form').find('*').filter(":input[value='']:visible:first").focus();
 	
 	$("#user_email").on("paste, keyup", function() {
 		var VAL = this.value;
