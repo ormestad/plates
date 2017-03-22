@@ -136,7 +136,7 @@ function parseLog($json,$type='plate') {
 	return $data;
 }
 
-// Plate name must be validated using validatePlate first
+// Plate name must be validated using parseQuery first
 function plateAdd($plate,$position,$user_email) {
 	if($position_data=parsePosition($position)) {
 		if($position_data['type']=='position') {
@@ -454,23 +454,27 @@ function parseRackLayout($layout,$showplates=TRUE) {
 	return $data;
 }
 
-// Validate name format and check if plate exist in LIMS
-function validatePlate($query) {
+// Parse query string to facilitate matching to different plate naming formats
+// Returning FALSE means query is invalid and will not query DB
+// Returns array of [name],[limsid],[type] if validated, otherwise FALSE
+
+function parseQuery($query) {
 	// Many different formats.... 
-	// LIMS ID: NN-NNNNNN - if match fetch container name (also check for type [sample|other])
-	// Plate name (project): PNNNNPN - type: [sample], if match fetch container LIMS ID
-	// Plate name (WS): WSYYMMDD, WSYYMMDD-text - type: [other], if match fetch container LIMS ID
-	
-	// Returns array of name,limsid,type if validated, otherwise FALSE
+	// - LIMS container ID: NN-NNNNNN - if match, fetch container name (also check for type [sample|other])
+	// - Plate name (samples for project): PNNNNPN - type: [sample], if match fetch container LIMS ID
+	// - Plate name (workset plate): WSYYMMDD, WSYYMMDD-text - type: [other], if match fetch container LIMS ID
+	// - or any other name as long as it doesn't look like a LIMS container ID or project name
 	
 	global $DB;
+	$query=trim($DB->real_escape_string($query));
 
-	if(preg_match("/(^\d{2}-\d+)/", $query, $matches)) {
+	if($match=validateLIMScontainerID($query)) {
 		// LIMS container ID
-		if($results=checkLIMScontainerID($matches[0])) {
+		if($results=checkLIMScontainerID($match)) {
 			$results['type']=validateLIMScontainerType($results['name']);
 		} else {
 			// Same format as LIMS container ID but does not exist in LIMS...
+			// Do not allow plates that have this name format but not exist in LIMS
 			$results=FALSE;
 		}
 	} else {
@@ -480,10 +484,31 @@ function validatePlate($query) {
 			$results['type']=validateLIMScontainerType($results['name']);
 		} else {
 			// Plate does not exist in LIMS, but it can be a new plate that hasn't been imported yet
-			$name=trim($DB->real_escape_string($query));
-			$results['name']=$name;
-			$results['limsid']=FALSE;
-			$results['type']=validateLIMScontainerType($name);
+			
+			// Also search among possible project names or ID's
+
+			// Check if query matches PNNNN format or J.Doe_17_01 project name format - in this case we want to search for plates
+			if(validateLimsProjectID($query)) {
+				// Query match LIMS project ID
+				if($project=getProject($query)) {
+					// There is a project in LIMS with this project ID, fetch data
+					$results['search']['query']=$query;
+					$results['search']['data']=$project;
+					$results['search']['html']=showProjectData($project);
+				} else {
+					// Same format as LIMS project ID but it does not exist in LIMS, not a suitable plate name...
+					$results=FALSE;
+				}
+			} elseif(preg_match("/^[A-Za-z]+\.[A-Za-z]{2,}_?([0-9]{2})?_?([0-9]{2})?/",$query)) {
+				// Query matches LIMS project name format, search StatusDB projects to see if there are any matches
+				// findProjectByName returns an array with [query],[data],[html]
+				$results['search']=findProjectByName($query);
+			} else {
+				// Query format does not match any known patterns, this is likely a new plate that doesn't exist in LIMS
+				$results['name']=$query;
+				$results['limsid']=FALSE;
+				$results['type']=validateLIMScontainerType($query);
+			}
 		}
 	}
 	
@@ -499,7 +524,7 @@ function checkLIMScontainerName($name) {
 	if(!$container=$clarity->getEntity("containers/?name=$name")) {
 		$container=FALSE;
 	}
-
+	
 	if(is_array($container)) {
 		return array("name" => $name, "limsid" => $container['container']['limsid']);
 	} else {
@@ -526,17 +551,17 @@ function checkLIMScontainerID($id) {
 
 // Only validate format of LIMS container ID
 function validateLIMScontainerID($id) {
-	return filter_var($id, FILTER_VALIDATE_REGEXP, array("options" => array("regexp" => "/(^\d{2}-\d+)/")));
+	return filter_var($id, FILTER_VALIDATE_REGEXP, array("options" => array("regexp" => "/^\d{2}-\d+$/")));
 }
 
 // Only validate format of LIMS project ID
 function validateLimsProjectID($lims_id) {
-	return filter_var($lims_id, FILTER_VALIDATE_REGEXP, array("options" => array("regexp" => "/^P[0-9]{3,}/")));
+	return filter_var($lims_id, FILTER_VALIDATE_REGEXP, array("options" => array("regexp" => "/^P[0-9]{1,}$/")));
 }
 
 // Only validate format of LIMS project name
 function validateLimsProjectName($lims_name) {
-	return filter_var($lims_name, FILTER_VALIDATE_REGEXP, array("options" => array("regexp" => "/^[A-Z]+\.[A-Za-z]{2,}_[0-9]{2}_[0-9]{2}/")));
+	return filter_var($lims_name, FILTER_VALIDATE_REGEXP, array("options" => array("regexp" => "/^[A-Z]+\.[A-Za-z]{2,}_[0-9]{2}_[0-9]{2}$/")));
 }
 
 // Determine wheter name is of sample plate format or other name
@@ -564,24 +589,29 @@ function findProjectByName($query) {
 		return (stripos($item,$query) !== FALSE);
 	});
 	
+	$card=new zurbCard();
+	$card->divider(count($search_results).' projects matching search query: '.$query);
+	$list=new htmlList('ul',array('class' => 'no-bullet'));
+
 	$results['query']=$query;	
-	$results['html']="<ul class=\"no-bullet\">";
 	if(count($search_results)>0) {
 		$results['data']=$search_results;
 		foreach($search_results as $lims_id => $project_name) {
-			$results['html'].="<li><code class=\"plate\">$lims_id</code> $project_name (".$projects_all[$lims_id]['project_name_user'].")</li>";
+			$list->listItem("<code class=\"plate\">$lims_id</code> $project_name (".$projects_all[$lims_id]['project_name_user'].")");
 		}
 	} else {
 		$results['data']=FALSE;
-		$results['html']="<li>No results matching query</li>";
+		$list->listItem("No results matching query");
 	}
-	$results['html'].="</ul>";
+	$card->section($list->render());
+	$results['html']=$card->render();
 	
 	return $results;
 }
 
 function showProjectData($project) {
-	$platesearch=plateFind($project['limsid']);
+	// Add trailing 'P' to avoid matching e.g. query 'P1' with plates 'P123P1', 'P1234P1' etc (this is sent to MySQL LIKE query)
+	$platesearch=plateFind($project['limsid'].'P'); 
 	$libprepdata=parseLibprep($project['udf']['Library construction method']);
 	$status=getProjectStatus($project);
 

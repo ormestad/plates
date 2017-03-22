@@ -8,20 +8,68 @@ $projecthtml="";
 $platehtml="";
 $rackhtml="";
 
-if(isset($_POST['user_email']) && $user=checkUser($_POST['user_email'])) {
-	if($plate=validatePlate($_POST['plate'])) {
-		if(isset($_POST['submit'])) {
-			$plate_data=sql_fetch("SELECT * FROM plates WHERE plate_id='".$plate['name']."' LIMIT 1");
-			if($plate_data) {
-				// Plate is already in DB
-				// Check status
-				if($plate_data['status']=="checked_in") {
-					// Plate is checked in
-					// Scan plate to verify check out
+if(isset($_POST['user_email'])) {
+	if($user=checkUser($_POST['user_email'])) {
+		if($plate=parseQuery($_POST['plate'])) {
+			if(isset($_POST['submit'])) {
+				$plate_data=sql_fetch("SELECT * FROM plates WHERE plate_id='".$plate['name']."' LIMIT 1");
+				if($plate_data) {
+					// Plate is already in DB
+					// Check status
+					if($plate_data['status']=="checked_in") {
+						// Plate is checked in
+						// Scan plate to verify check out
+						if(isset($_POST['plate_verify'])) {
+							if($plate['name']==$_POST['plate_verify']) {
+								if(plateCheckOut($plate_data,$user['user_email'])) {
+									$ALERTS[]=setAlerts("Plate checked out","success");
+									$plate=FALSE;
+								} else {
+									$ALERTS[]=setAlerts("Could not check out plate!");
+								}
+							} else {
+								$ALERTS[]=setAlerts("Plate name does not match!");
+							}
+						}
+					} elseif($plate_data['status']=="checked_out") {
+						// Plate is checked out
+						// Show previous position!
+						if(isset($_POST['position'])) {
+							if(plateCheckIn($plate_data,$_POST['position'],$user['user_email'])) {
+								$ALERTS[]=setAlerts("Plate was checked in successfully","success");
+								$plate=FALSE;
+							} else {
+								$ALERTS[]=setAlerts("Could not check in plate!");
+							}
+						}
+					}
+				} else {
+					// Plate is not in database
+					// If position is set, proceed with adding plate
+					if(isset($_POST['position'])) {
+						// Check in new plate (add)
+						if(plateAdd($plate['name'],$_POST['position'],$user['user_email'])) {
+							$ALERTS[]=setAlerts("Plate was added successfully","success");
+							$plate=FALSE;
+						} else {
+							$ALERTS[]=setAlerts("Could not add plate!");
+						}
+					} else {
+						// If there are search matches, show them!
+						// If no search matches, proceed with check in of unidentified plate
+						if(count($plate['search'])) {
+							$search=$plate['search'];
+							$plate=FALSE;
+						}
+					}
+				}
+			} elseif(isset($_POST['return'])) {
+				$plate_data=sql_fetch("SELECT * FROM plates WHERE plate_id='".$plate['name']."' LIMIT 1");
+				if($plate_data) {
 					if(isset($_POST['plate_verify'])) {
 						if($plate['name']==$_POST['plate_verify']) {
-							if(plateCheckOut($plate_data,$user['user_email'])) {
-								$ALERTS[]=setAlerts("Plate checked out","success");
+							if(plateCheckOut($plate_data,$user['user_email'],'return')) {
+								$ALERTS[]=setAlerts("Plate checked out for returning to user, this means a plate with the same name can not be checked in again","warning");
 								$plate=FALSE;
 							} else {
 								$ALERTS[]=setAlerts("Could not check out plate!");
@@ -30,84 +78,36 @@ if(isset($_POST['user_email']) && $user=checkUser($_POST['user_email'])) {
 							$ALERTS[]=setAlerts("Plate name does not match!");
 						}
 					}
-				} elseif($plate_data['status']=="checked_out") {
-					// Plate is checked out
-					// Show previous position!
-					if(isset($_POST['position'])) {
-						if(plateCheckIn($plate_data,$_POST['position'],$user['user_email'])) {
-							$ALERTS[]=setAlerts("Plate was checked in successfully","success");
-							$plate=FALSE;
+				}
+			} elseif(isset($_POST['destroy'])) {
+				$plate_data=sql_fetch("SELECT * FROM plates WHERE plate_id='".$plate['name']."' LIMIT 1");
+				if($plate_data) {
+					if(isset($_POST['plate_verify'])) {
+						if($plate['name']==$_POST['plate_verify']) {
+							if(plateCheckOut($plate_data,$user['user_email'],'destroy')) {
+								$ALERTS[]=setAlerts("Plate checked out for destruction, this means a plate with the same name can not be checked in again","warning");
+								$plate=FALSE;
+							} else {
+								$ALERTS[]=setAlerts("Could not check out plate!");
+							}
 						} else {
-							$ALERTS[]=setAlerts("Could not check in plate!");
+							$ALERTS[]=setAlerts("Plate name does not match!");
 						}
 					}
 				}
-			} else {
-				// Plate is not in database
-
-				// Check if query matches PNNNN format or J.Doe_17_01 project name format - in this case we want to search for plates
-				if(preg_match("/^P[0-9]{3,}$/",$plate['name'])) {
-					// Query match LIMS project ID - fetch project info
-					if($project=getProject($plate['name'])) {
-						$search=TRUE;
-					}
-					$plate=FALSE;
-				} elseif(preg_match("/^[A-Z]+\.[A-Za-z]{2,}_?([0-9]{2})?_?([0-9]{2})?/",$plate['name'])) {
-					$search=findProjectByName($plate['name']);
-					$plate=FALSE;
-				}
-				
-				// Check in
-				if(isset($_POST['position'])) {
-					if(plateAdd($plate['name'],$_POST['position'],$user['user_email'])) {
-						$ALERTS[]=setAlerts("Plate was added successfully","success");
-						$plate=FALSE;
-					} else {
-						$ALERTS[]=setAlerts("Could not add plate!");
-					}
-				}
+			} elseif(isset($_POST['cancel'])) {
+				$plate=FALSE;
 			}
-		} elseif(isset($_POST['return'])) {
-			$plate_data=sql_fetch("SELECT * FROM plates WHERE plate_id='".$plate['name']."' LIMIT 1");
-			if($plate_data) {
-				if(isset($_POST['plate_verify'])) {
-					if($plate['name']==$_POST['plate_verify']) {
-						if(plateCheckOut($plate_data,$user['user_email'],'return')) {
-							$ALERTS[]=setAlerts("Plate checked out for returning to user, this means a plate with the same name can not be checked in again","warning");
-							$plate=FALSE;
-						} else {
-							$ALERTS[]=setAlerts("Could not check out plate!");
-						}
-					} else {
-						$ALERTS[]=setAlerts("Plate name does not match!");
-					}
-				}
-			}
-		} elseif(isset($_POST['destroy'])) {
-			$plate_data=sql_fetch("SELECT * FROM plates WHERE plate_id='".$plate['name']."' LIMIT 1");
-			if($plate_data) {
-				if(isset($_POST['plate_verify'])) {
-					if($plate['name']==$_POST['plate_verify']) {
-						if(plateCheckOut($plate_data,$user['user_email'],'destroy')) {
-							$ALERTS[]=setAlerts("Plate checked out for destruction, this means a plate with the same name can not be checked in again","warning");
-							$plate=FALSE;
-						} else {
-							$ALERTS[]=setAlerts("Could not check out plate!");
-						}
-					} else {
-						$ALERTS[]=setAlerts("Plate name does not match!");
-					}
-				}
-			}
-		} elseif(isset($_POST['cancel'])) {
+		} else {
 			$plate=FALSE;
+			$ALERTS[]=setAlerts("Invalid query: ".$_POST['plate']);
 		}
 	} else {
 		$plate=FALSE;
+		$ALERTS[]=setAlerts("Invalid user name");
 	}
 } else {
 	$plate=FALSE;
-	$ALERTS[]=setAlerts("Invalid user name");
 }
 
 // Build page
@@ -245,18 +245,7 @@ if($plate) {
 	
 	// Check if this is a search
 	if($search) {
-		if($project) {
-			// Search using project LIMS ID
-			// Show project info
-			$projecthtml=showProjectData($project);
-		} else {
-			// Search using project name
-			// List matching projects
-			$projectcard=new zurbCard();
-			$projectcard->divider(count($search['data']).' projects matching search query: '.$search['query']);
-			$projectcard->section($search['html']);
-			$projecthtml=$projectcard->render();
-		}
+		$projecthtml=$search['html'];
 		$theform->addInput("Operator (use your SciLifeLab email address)",array("type" => "text", "name" => "user_email", "value" => $user['user_email'], "required" => "", "id" => "user_email", "autocomplete" => "off"));
 		$theform->addInput("Plate",array("type" => "text", "name" => "plate", "value" => $plate, "id" => "plate", "autocomplete" => "off"));
 		$theform->addInput(FALSE,array("type" => "submit", "name" => "submit", "value" => "Next", "class" => "button"));
