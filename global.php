@@ -1,6 +1,6 @@
 <?php
 // Load configuration
-require_once 'config.php';
+require 'config.php';
 
 //Connect to database
 $DB=new mysqli("p:".$CONFIG['mysql']['server'],$CONFIG['mysql']['user'],$CONFIG['mysql']['pass'],$CONFIG['mysql']['db']);
@@ -9,8 +9,8 @@ if($DB->connect_errno>0){
 }
 
 // Include libraries
-require_once 'class.clarity.v3.php';
-require_once 'class.html.php';
+require 'class.clarity.v3.php';
+require 'class.html.php';
 
 //--------------------------------------------------------------------------------------------------
 // Global functions
@@ -502,7 +502,14 @@ function parseQuery($query) {
 			} elseif(preg_match("/^[A-Za-z]+\.[A-Za-z]{2,}_?([0-9]{2})?_?([0-9]{2})?/",$query)) {
 				// Query matches LIMS project name format, search StatusDB projects to see if there are any matches
 				// findProjectByName returns an array with [query],[data],[html]
-				$results['search']=findProjectByName($query);
+				$search=findProjectByName($query);
+				if($search['data']) {
+					$results['search']=$search;
+				} else {
+					$results['name']=$query;
+					$results['limsid']=FALSE;
+					$results['type']=validateLIMScontainerType($query);
+				}
 			} else {
 				// Query format does not match any known patterns, this is likely a new plate that doesn't exist in LIMS
 				$results['name']=$query;
@@ -573,7 +580,7 @@ function validateLIMScontainerType($name) {
 	}
 }
 
-// Get LIMS ID from Plate ID
+// Get project LIMS ID from Plate ID
 function parseProjectPlateName($plate_name) {
 	if(preg_match("/(^P\d+)(P[1-9])/",$plate_name,$matches)) {
 		return array("limsid" => $matches[1], "plate_number" => $matches[2]);
@@ -609,24 +616,90 @@ function findProjectByName($query) {
 	return $results;
 }
 
-function showProjectData($project) {
-	// Add trailing 'P' to avoid matching e.g. query 'P1' with plates 'P123P1', 'P1234P1' etc (this is sent to MySQL LIKE query)
-	$platesearch=plateFind($project['limsid'].'P'); 
-	$libprepdata=parseLibprep($project['udf']['Library construction method']);
-	$status=getProjectStatus($project);
+// Show plate info
+function showPlateData($plate) {
+	global $CONFIG;
+	$plate_data=sql_fetch("SELECT * FROM plates WHERE plate_id='".$plate['name']."' LIMIT 1");
 
-	$projectcard=new zurbCard();
-	$projectdata=new htmlList('ul',array('class' => 'no-bullet'));
-	$projectdata->listItem('Project status: '.$status['html']);
-	$projectdata->listItem('Input material: '.$libprepdata['input']);
-	$projectdata->listItem('Library prep: '.$libprepdata['type']);
+	if($plate['type']=="sample") {
+		// This is a project sample plate - fetch project information
+		$sampleplate=parseProjectPlateName($plate['name']);
+		$project=getProject($sampleplate['limsid']);
+		$html=showProjectData($project);
+	}
+
+	$card=new zurbCard();
+	$card->divider("<strong>Selected plate</strong> <code>".$plate['name']."</code>");
+	$list=new htmlList('ul',array('class' => 'no-bullet'));
+	$list->listItem('Plate status: '.formatPlateStatus($plate_data['status']));
+	if($plate['limsid']) {
+		// Show plate information from LIMS
+		$clarity=new Clarity("https://genologics.scilifelab.se/api/v2/",$CONFIG['clarity']['user'],$CONFIG['clarity']['pass']);
+		$container=$clarity->getEntity("containers/".$plate['limsid']);
+		$list->listItem('LIMS ID: <code>'.$container['limsid'].'</code>');
+		$list->listItem('Number of samples: <code>'.$container['occupied-wells'].'</code>');
+	} else {
+		// Plate does not exist in LIMS
+		$list->listItem('LIMS ID: <span class="alert label">Plate does not exist in LIMS</span>');
+	}
+	$card->section($list->render());
+	switch($plate_data['status']) {
+		case 'destroyed':
+			$card->section('<strong>This plate has been destroyed and can not be checked in again.</strong>');
+		break;
+
+		case 'returned':
+			$card->section('<strong>This plate has been returned to the user and can not be checked in again.</strong><br>If the plate has been modified and returned it has to be imported as a new plate in LIMS.');
+		break;
+	}
 	
-	$projectcard->divider('<strong>Selected project</strong> '.$project['limsid'].', '.$project['name'].' ('.$project['udf']['Customer project reference'].")");
-	$projectcard->section($projectdata->render());
-	$projectcard->divider('Registered plates matching: '.$project['limsid']);
-	$projectcard->section($platesearch['html']);
+	// Show log
+	$log=new htmlTable('Plate log',array('class' => 'log'));
+	$log->addData(parseLog($plate_data['log']));
+	$card->section($log->render());
+	$html.=$card->render();
+
+	return $html;
+}
+
+// Show project info
+function showProjectData($project) {
+	$card=new zurbCard();
+
+	if($project) {
+		// Add trailing 'P' to avoid matching e.g. query 'P1' with plates 'P123P1', 'P1234P1' etc (this is sent to MySQL LIKE query)
+		$platesearch=plateFind($project['limsid'].'P'); 
+		$libprepdata=parseLibprep($project['udf']['Library construction method']);
+		$status=getProjectStatus($project);
 	
-	return $projectcard->render();
+		$list=new htmlList('ul',array('class' => 'no-bullet'));
+		$list->listItem('Project status: '.$status['html']);
+		$list->listItem('Input material: '.$libprepdata['input']);
+		$list->listItem('Library prep: '.$libprepdata['type']);
+		
+		$card->divider('<strong>Selected project</strong> '.$project['limsid'].', '.$project['name'].' ('.$project['udf']['Customer project reference'].")");
+		$card->section($list->render());
+		$card->divider('Registered plates matching: '.$project['limsid']);
+		$card->section($platesearch['html']);
+	} else {
+		$card->divider('<strong>No associated project</strong>');
+		$card->section('This looks like a sample plate for a project. However, the corresponding project can not be found in LIMS so please check that the plate name is correct.');
+	}
+	
+	return $card->render();
+}
+
+// Show rack info
+function showRackData($plate_data) {
+	$rack=getRack($plate_data['rack_id'],$plate_data['plate_id'],$plate_data['col'],$plate_data['row']);
+	$racklayout=new htmlTable('Rack: '.$rack['data']['rack_name'],array('class' => 'rack'));
+	$racklayout->addData(parseRackLayout($rack['layout']));
+	
+	$card=new zurbCard();
+	$card->divider('<strong>Location</strong> '.$rack['storage']['storage_name'].' ('.$rack['storage']['storage_temp'].'&deg;C '.$rack['storage']['storage_type'].' in room '.$rack['storage']['storage_location'].')');
+	$card->section($racklayout->render());
+	$card->section("<p>Plate <code>".$plate_data['plate_id']."</code> located in rack <code>".$rack['data']['rack_name']."</code> @ Col:<code>".$plate_data['col']."</code> Row:<code>".$plate_data['row']."</code></p>");
+	return $card->render();
 }
 
 // Evaluate project status based on dates from LIMS

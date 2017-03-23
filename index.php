@@ -4,9 +4,6 @@ require 'global.php';
 $ALERTS=array();
 $project=FALSE;
 $search=FALSE;
-$projecthtml="";
-$platehtml="";
-$rackhtml="";
 
 if(isset($_POST['user_email'])) {
 	if($user=checkUser($_POST['user_email'])) {
@@ -145,57 +142,7 @@ if($checkedout->num_rows>0) {
 
 if($plate) {
 	// Plate selected and validated
-	// Show project and sample info 
-	if($plate['type']=="sample") {
-		// This is a project sample plate - fetch project information
-		$sampleplate=parseProjectPlateName($plate['name']);
-		if($project=getProject($sampleplate['limsid'])) {
-			$projecthtml=showProjectData($project);
-		} else {
-			// Looks like project plate but project does not exist in LIMS
-			$projectcard=new zurbCard();
-			$projectcard->divider('<strong>No associated project</strong>');
-			$projectcard->section('This looks like a sample plate for a project. However, the corresponding project can not be found in LIMS so please check that the plate name is correct.');
-			$projecthtml=$projectcard->render();
-		}
-	} else {
-		// Not a project sample plate, don't show any project information
-		$projecthtml='';
-	}
-	
-	// Show plate info
-	$platecard=new zurbCard();
-	$platecard->divider("<strong>Selected plate</strong> <code>".$plate['name']."</code>");
-	$platedata=new htmlList('ul',array('class' => 'no-bullet'));
-	$platedata->listItem('Plate status: '.formatPlateStatus($plate_data['status']));
-	if($plate['limsid']) {
-		// Show plate information from LIMS
-		$clarity=new Clarity("https://genologics.scilifelab.se/api/v2/",$CONFIG['clarity']['user'],$CONFIG['clarity']['pass']);
-		$container=$clarity->getEntity("containers/".$plate['limsid']);
-		$platedata->listItem('LIMS ID: <code>'.$container['limsid'].'</code>');
-		$platedata->listItem('Number of samples: <code>'.$container['occupied-wells'].'</code>');
-	} else {
-		// Plate does not exist in LIMS
-		$platedata->listItem('LIMS ID: <span class="alert label">Plate does not exist in LIMS</span>');
-	}
-	$platecard->section($platedata->render());
-	switch($plate_data['status']) {
-		case 'destroyed':
-			$platecard->section('<strong>This plate has been destroyed and can not be checked in again.</strong>');
-		break;
-
-		case 'returned':
-			$platecard->section('<strong>This plate has been returned to the user and can not be checked in again.</strong><br>If the plate has been modified and returned it has to be imported as a new plate in LIMS.');
-		break;
-	}
-	
-	
-	// Show log
-	$platelog=new htmlTable('Plate log',array('class' => 'log'));
-	$platelog->addData(parseLog($plate_data['log']));
-	$platecard->section($platelog->render());
-
-	$platehtml=$platecard->render();
+	$html=showPlateData($plate);
 	
 	// Hidden form fields with plate and user info
 	$theform->addInput(FALSE,array("type" => "hidden", "name" => "user_email", "value" => $user['user_email']));
@@ -205,14 +152,7 @@ if($plate) {
 		// Plate exist in database already
 		if($plate_data['status']=="checked_in") {
 			// Plate is checked in, show location info
-			$rack=getRack($plate_data['rack_id'],$plate['name']);
-			$racklayout=new htmlTable('Rack: '.$rack['data']['rack_name'],array('class' => 'rack'));
-			$racklayout->addData(parseRackLayout($rack['layout']));
-			$rackcard=new zurbCard();
-			$rackcard->divider('<strong>Location</strong> '.$rack['storage']['storage_name'].' ('.$rack['storage']['storage_temp'].'&deg;C '.$rack['storage']['storage_type'].' in room '.$rack['storage']['storage_location'].')');
-			$rackcard->section($racklayout->render());
-			$rackcard->section("<p>Plate <code>".$plate_data['plate_id']."</code> located in rack <code>".$rack['data']['rack_name']."</code> @ Col:<code>".$plate_data['col']."</code> Row:<code>".$plate_data['row']."</code></p>");
-			$rackhtml=$rackcard->render();
+			$html.=showRackData($plate_data);
 
 			// Check out plate
 			$theform->addInput("Verify plate ID before proceeding",array("type" => "text", "name" => "plate_verify", "value" => "", "autocomplete" => "off"));
@@ -238,14 +178,14 @@ if($plate) {
 		$theform->addInput(FALSE,array("type" => "submit", "name" => "cancel", "value" => "Cancel", "class" => "secondary button"));
 	}
 } else {
-	// Default view:
+	// Default view
 	// No plate selected OR search results showing specific project or list of projects
 	
 	// Operator (user_email) field controlled by jQuery Regex that automatically change focus to next input if valid scilifelab domain email is entered (js/app.js)
 	
 	// Check if this is a search
 	if($search) {
-		$projecthtml=$search['html'];
+		$html=$search['html'];
 		$theform->addInput("Operator (use your SciLifeLab email address)",array("type" => "text", "name" => "user_email", "value" => $user['user_email'], "required" => "", "id" => "user_email", "autocomplete" => "off"));
 		$theform->addInput("Plate",array("type" => "text", "name" => "plate", "value" => $plate, "id" => "plate", "autocomplete" => "off"));
 		$theform->addInput(FALSE,array("type" => "submit", "name" => "submit", "value" => "Next", "class" => "button"));
@@ -292,9 +232,7 @@ if($plate) {
 <div class="row">
 <br>
 <div class="large-12 columns">
-<?php echo $projecthtml; ?>
-<?php echo $platehtml; ?>
-<?php echo $rackhtml; ?>
+<?php echo $html; ?>
 <?php echo $theform->render(); ?>
 
 <!-- Placeholder for plate position info during check in, populated by _rackview.php from AJAX request -->
