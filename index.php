@@ -109,17 +109,22 @@ if($checkedout->num_rows>0) {
 	while($checkedout_plate=$checkedout->fetch_assoc()) {
 		$lastlog=getLastLog($checkedout_plate['log']);
 		$checkedouttime=date('Y-m-d H:i:s', $lastlog['timestamp']);
-		$diff=round((time()-$lastlog['timestamp'])/3600);
-		if($diff>12) {
-			$checkedouton=date('Y-m-d H:i:s', $lastlog['timestamp']).' <span class="alert label">(ca '.$diff.'h ago)</span>';
+		$diff=time()-$lastlog['timestamp'];
+		if($diff<3600) {
+			$diff=round($diff/60);
+			$diff_msg=' <span class="label">ca '.$diff.' min ago</span>';
+		} elseif($diff<86400) {
+			$diff=round($diff/3600);
+			$diff_msg=' <span class="warning label">ca '.$diff.' h ago</span>';
 		} else {
-			$checkedouton=date('Y-m-d H:i:s', $lastlog['timestamp']).' <span class="label">(ca '.$diff.'h ago)</span>';
+			$diff=round($diff/86400);
+			$diff_msg=' <span class="alert label">ca '.$diff.' days ago</span>';
 		}
 		
 		$checked_out_data[]=array(
 			'plate'				=> '<code class="plate">'.$checkedout_plate['plate_id'].'</code>', 
 			'checked_out_by'	=> $lastlog['user'], 
-			'checked_out_on'	=> $checkedouton, 
+			'checked_out_on'	=> date('Y-m-d H:i:s', $lastlog['timestamp']).$diff_msg, 
 			'from'				=> '<code>'.$lastlog['position'].'</code>'
 		);
 	}
