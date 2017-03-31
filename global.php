@@ -234,20 +234,46 @@ function plateCheckIn($plate_data,$position,$user_email) {
 	}
 }
 
+// Fetching all plates from database and optionally cache result in a json file
+function getPlates($cache=FALSE) {
+	$plate_query=sql_query("SELECT plate_id FROM plates");
+	if($plate_query->num_rows>0) {
+		while($plate=$plate_query->fetch_assoc()) {
+			$allplates[]=$plate['plate_id'];
+		}
+
+		if($cache) {
+			file_put_contents($cache, json_encode($allplates));
+		}
+		
+		return $allplates;
+	} else {
+		return FALSE;
+	}
+}
+
 function plateFind($query) {
 	global $DB;
 	$query=$DB->real_escape_string($query);
-	$search_query=sql_query("SELECT * FROM plates WHERE plate_id LIKE '$query%'");
+	$search_query=sql_query("SELECT * FROM plates WHERE plate_id LIKE '%$query%'");
+	$results['query']=$query;
 	
+	$card=new zurbCard();
+	$list=new htmlList('ul',array('class' => 'no-bullet'));
+	$card->divider('Registered plates matching: '.$query);
+
 	if($search_query->num_rows>0) {
 		while($plate=$search_query->fetch_assoc()) {
-			$results['data'][$plate['plate_id']]="<code class=\"plate\">".$plate['plate_id']."</code> ".formatPlateStatus($plate['status'])."<br>";
+			$results['data'][$plate['plate_id']]=$plate;
+			$list->listItem('<code class="plate">'.$plate['plate_id'].'</code> '.formatPlateStatus($plate['status']));
 		}
-		$results['html']=implode(" ",$results['data']);
 	} else {
 		$results['data']=FALSE;
-		$results['html']='<p>No plates found</p>';
+		$list->listItem('No plates found');
 	}
+	
+	$card->section($list->render());
+	$results['html']=$card->render();
 	
 	return $results;
 }
@@ -454,9 +480,18 @@ function parseRackLayout($layout,$showplates=TRUE) {
 	return $data;
 }
 
-// Parse query string to facilitate matching to different plate naming formats
-// Returning FALSE means query is invalid and will not query DB
-// Returns array of [name],[limsid],[type] if validated, otherwise FALSE
+/*
+Parse query string to facilitate matching to different plate naming formats
+Returning FALSE means query is invalid and will not query DB
+Returns array if validated, otherwise FALSE 
+
+	[search] 	= array of search data containing matches to plates or projects
+	[name]		= plate name / FALSE if NOT a plate (e.g. if there are matches to project names or ID's). 
+					- If plate name is not returned page will show plate input field
+					- If plate name is returned page will show position input field
+	[limsid]	= plate LIMS ID
+	[type] 		= plate type
+*/
 
 function parseQuery($query) {
 	// Many different formats.... 
@@ -495,6 +530,7 @@ function parseQuery($query) {
 					$results['search']['query']=$query;
 					$results['search']['data']=$project;
 					$results['search']['html']=showProjectData($project);
+					$results['name']=FALSE;
 				} else {
 					// Same format as LIMS project ID but it does not exist in LIMS, not a suitable plate name...
 					$results=FALSE;
@@ -505,6 +541,7 @@ function parseQuery($query) {
 				$search=findProjectByName($query);
 				if($search['data']) {
 					$results['search']=$search;
+					$results['name']=FALSE;
 				} else {
 					$results['name']=$query;
 					$results['limsid']=FALSE;
@@ -512,9 +549,17 @@ function parseQuery($query) {
 				}
 			} else {
 				// Query format does not match any known patterns, this is likely a new plate that doesn't exist in LIMS
-				$results['name']=$query;
-				$results['limsid']=FALSE;
-				$results['type']=validateLIMScontainerType($query);
+				$search=plateFind($query);
+				if(count($search['data'])>1) {
+					$results['search']=$search;
+					$results['name']=$query;
+					$results['limsid']=FALSE;
+					$results['type']=validateLIMScontainerType($query);
+				} else {
+					$results['name']=$query;
+					$results['limsid']=FALSE;
+					$results['type']=validateLIMScontainerType($query);
+				}
 			}
 		}
 	}
@@ -679,14 +724,14 @@ function showProjectData($project) {
 		
 		$card->divider('<strong>Selected project</strong> '.$project['limsid'].', '.$project['name'].' ('.$project['udf']['Customer project reference'].")");
 		$card->section($list->render());
-		$card->divider('Registered plates matching: '.$project['limsid']);
-		$card->section($platesearch['html']);
+		//$card->divider('Registered plates matching: '.$project['limsid']);
+		//$card->section($platesearch['html']);
 	} else {
 		$card->divider('<strong>No associated project</strong>');
 		$card->section('This looks like a sample plate for a project. However, the corresponding project can not be found in LIMS so please check that the plate name is correct.');
 	}
 	
-	return $card->render();
+	return $card->render().$platesearch['html'];
 }
 
 // Show rack info

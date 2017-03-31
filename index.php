@@ -2,8 +2,6 @@
 require 'global.php';
 
 $ALERTS=array();
-$project=FALSE;
-$search=FALSE;
 
 if(isset($_POST['user_email'])) {
 	if($user=checkUser($_POST['user_email'])) {
@@ -50,13 +48,6 @@ if(isset($_POST['user_email'])) {
 							$plate=FALSE;
 						} else {
 							$ALERTS[]=setAlerts("Could not add plate!");
-						}
-					} else {
-						// If there are search matches, show them!
-						// If no search matches, proceed with check in of unidentified plate
-						if(count($plate['search'])) {
-							$search=$plate['search'];
-							$plate=FALSE;
 						}
 					}
 				}
@@ -140,7 +131,7 @@ if($checkedout->num_rows>0) {
 	$checkedout_html='';
 }
 
-if($plate) {
+if($plate['name']) {
 	// Plate selected and validated
 	$html=showPlateData($plate);
 	
@@ -150,6 +141,7 @@ if($plate) {
 	
 	if($plate_data) {
 		// Plate exist in database already
+
 		if($plate_data['status']=="checked_in") {
 			// Plate is checked in, show location info
 			$html.=showRackData($plate_data);
@@ -172,6 +164,7 @@ if($plate) {
 	} else {
 		// Check in of new plate
 		$ALERTS[]=setAlerts("Plate does not exist in plate database");
+		$html.=$plate['search']['html'];
 		// position field controlled by jQuery Regex that trigger AJAX request of conditional position information to #rackview div below
 		$theform->addInput("Position",array("type" => "text", "name" => "position", "value" => "", "id" => "position", "autocomplete" => "off"));
 		$theform->addInput(FALSE,array("type" => "submit", "name" => "submit", "value" => "Check in plate", "class" => "button"));
@@ -183,14 +176,15 @@ if($plate) {
 	
 	// Operator (user_email) field controlled by jQuery Regex that automatically change focus to next input if valid scilifelab domain email is entered (js/app.js)
 	
-	// Check if this is a search
-	if($search) {
-		$html=$search['html'];
+	if($plate['search']) {
+		// There are search matches but no plate selected
+		$html=$plate['search']['html'];
 		$theform->addInput("Operator (use your SciLifeLab email address)",array("type" => "text", "name" => "user_email", "value" => $user['user_email'], "required" => "", "id" => "user_email", "autocomplete" => "off"));
 		$theform->addInput("Plate",array("type" => "text", "name" => "plate", "value" => $plate, "id" => "plate", "autocomplete" => "off"));
 		$theform->addInput(FALSE,array("type" => "submit", "name" => "submit", "value" => "Next", "class" => "button"));
 		$theform->addInput(FALSE,array("type" => "submit", "name" => "cancel", "value" => "Cancel", "class" => "secondary button"));
 	} else {
+		// Default view, no search matches and no plate selected
 		$theform->addText('Manage plates by scanning plate barcode or search using plate/project ID or name.');
 		$theform->addInput("Operator (use your SciLifeLab email address)",array("type" => "text", "name" => "user_email", "value" => "", "required" => "", "id" => "user_email", "autocomplete" => "off"));
 		$theform->addInput("Plate",array("type" => "text", "name" => "plate", "value" => $plate, "required" => "", "id" => "plate", "autocomplete" => "off"));
@@ -235,8 +229,9 @@ if($plate) {
 <?php echo $html; ?>
 <?php echo $theform->render(); ?>
 
+<!-- Placeholder for live plate search, populated by _platesearch.php from AJAX request -->
 <!-- Placeholder for plate position info during check in, populated by _rackview.php from AJAX request -->
-<div id="rackview"></div>
+<div id="query_data"></div>
 
 <?php echo $checkedout_html; ?>
 </div>
