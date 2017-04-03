@@ -11,6 +11,19 @@ $.fn.plateClick = function() {
 };
 
 $(document).ready(function() {
+	// Update server status flags (using Foundation class names success|alert)
+	$.ajax({
+		url: '_status.php', 
+		dataType: 'json', 
+		success: function(json) {
+			$.each(json,function(key,status) {
+				$("#" + key).fadeOut('fast', function() {
+					$(this).addClass(status).fadeIn('slow');
+				});
+			});
+		}
+	});
+	
 	// Automatically focus on first empty input field in all forms
 	$('form').find('*').filter(":input[value='']:visible:first").focus();
 	

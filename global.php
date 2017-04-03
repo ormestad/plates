@@ -10,6 +10,7 @@ if($DB->connect_errno>0){
 
 // Include libraries
 require 'class.clarity.v3.php';
+require 'class.couch.php';
 require 'class.html.php';
 
 //--------------------------------------------------------------------------------------------------
@@ -572,10 +573,8 @@ function checkLIMScontainerName($name) {
 	global $CONFIG;
 	$name=trim(filter_var($name,FILTER_SANITIZE_STRING));
 	
-	$clarity=new Clarity("https://genologics.scilifelab.se/api/v2/",$CONFIG['clarity']['user'],$CONFIG['clarity']['pass']);
-	if(!$container=$clarity->getEntity("containers/?name=$name")) {
-		$container=FALSE;
-	}
+	$clarity=new Clarity($CONFIG['clarity']['uri'],$CONFIG['clarity']['user'],$CONFIG['clarity']['pass']);
+	$container=$clarity->getEntity("containers/?name=$name");
 	
 	if(is_array($container)) {
 		return array("name" => $name, "limsid" => $container['container']['limsid']);
@@ -588,7 +587,7 @@ function checkLIMScontainerName($name) {
 function checkLIMScontainerID($id) {
 	global $CONFIG;
 	if($id=validateLIMScontainerID($id)) {
-		$clarity=new Clarity("https://genologics.scilifelab.se/api/v2/",$CONFIG['clarity']['user'],$CONFIG['clarity']['pass']);
+		$clarity=new Clarity($CONFIG['clarity']['uri'],$CONFIG['clarity']['user'],$CONFIG['clarity']['pass']);
 		$container=$clarity->getEntity("containers/$id");
 
 		if(is_array($container)) {
@@ -679,7 +678,7 @@ function showPlateData($plate) {
 	$list->listItem('Plate status: '.formatPlateStatus($plate_data['status']));
 	if($plate['limsid']) {
 		// Show plate information from LIMS
-		$clarity=new Clarity("https://genologics.scilifelab.se/api/v2/",$CONFIG['clarity']['user'],$CONFIG['clarity']['pass']);
+		$clarity=new Clarity($CONFIG['clarity']['uri'],$CONFIG['clarity']['user'],$CONFIG['clarity']['pass']);
 		$container=$clarity->getEntity("containers/".$plate['limsid']);
 		$list->listItem('LIMS ID: <code>'.$container['limsid'].'</code>');
 		$list->listItem('Number of samples: <code>'.$container['occupied-wells'].'</code>');
@@ -776,10 +775,8 @@ function getProjectStatus($project) {
 // Fetch all projects from StatusDB
 function getProjects() {
 	global $CONFIG;
-	$auth=$CONFIG['couch']['user'].":".$CONFIG['couch']['pass'];
-	$url="http://$auth@tools.scilifelab.se:5984/projects/_design/project/_view/summary?reduce=false";
-	$data=file_get_contents($url);
-    $json=json_decode($data);
+	$couch=new Couch($CONFIG['couch']['host'],$CONFIG['couch']['port'],$CONFIG['couch']['user'],$CONFIG['couch']['pass']);
+	$json=$couch->getView($CONFIG['couch']['views']['projects']);
 
     foreach($json->rows as $object) {
 	    $projectdata=array(
@@ -823,7 +820,7 @@ function getProjects() {
 function getProject($lims_id) {
 	global $ALERTS,$CONFIG;
 	if($lims_id=validateLimsProjectID($lims_id)) {
-		$clarity=new Clarity("https://genologics.scilifelab.se/api/v2/",$CONFIG['clarity']['user'],$CONFIG['clarity']['pass']);
+		$clarity=new Clarity($CONFIG['clarity']['uri'],$CONFIG['clarity']['user'],$CONFIG['clarity']['pass']);
 		if($project=$clarity->getEntity("projects/$lims_id")) {
 			return $project;
 		} else {
@@ -859,10 +856,8 @@ function parseLibprep($prep) {
 // Get all users from StatusDB
 function getUsers($user=FALSE) {
 	global $CONFIG;
-	$auth=$CONFIG['couch']['user'].":".$CONFIG['couch']['pass'];
-	$url="http://$auth@tools.scilifelab.se:5984/gs_users/_design/authorized/_view/users?reduce=false";
-	$data=file_get_contents($url);
-    $json=json_decode($data);
+	$couch=new Couch($CONFIG['couch']['host'],$CONFIG['couch']['port'],$CONFIG['couch']['user'],$CONFIG['couch']['pass']);
+	$json=$couch->getView($CONFIG['couch']['views']['users']);
 
     foreach($json->rows as $object) {
 	    $users[$object->key]=$object->value;

@@ -224,6 +224,13 @@ if($plate['name']) {
 			<li><a href="storage.php">Manage storage</a></li>
 		</ul>
 	</div>
+
+	<div class="top-bar-right">
+		<ul class="menu" id="server_status">
+			<li><span class="label" id="lims-status">LIMS</span>&nbsp;</li>
+			<li><span class="label" id="couch-status">StatusDB</span>&nbsp;</li>
+		</ul>
+	</div>
 </div>
 
 <?php echo formatAlerts($ALERTS); ?>
