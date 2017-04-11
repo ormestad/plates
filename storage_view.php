@@ -8,24 +8,40 @@ if(isset($_GET['id'])) {
 		$storage=getStorage($position['storage_id']);
 		if(!$storage['error']) {
 			if(count($storage['racks'])) {
-				foreach($storage['racks'] as $rack) {
-					$rack_id=renderRackID($rack);
-					$data[]=array(
-						'identifier'	=> "<a href=\"rack_view.php?id=$rack_id\"><code>".$rack_id.'</code>', 
-						'name'			=> $rack['rack_name'], 
-						'description'	=> $rack['rack_description'], 
-						'status'		=> formatStorageStatus($rack['rack_status']), 
-						'columns'		=> $rack['cols'], 
-						'rows'			=> $rack['rows'], 
-						'slots'			=> $rack['slots'], 
-						'edit'			=> "<a href=\"rack_edit.php?id=$rack_id\"><i class=\"fi-widget\"></i></a>"
-					);
+				if($_GET['view']=='labels') {
+					$total=count($storage['racks']);
+					$columns=3;
+					$rows=ceil($total/$columns);
+					$table_title='Racks <a href="storage_view.php?id='.$_GET['id'].'"><i class="fi-list"></i></a>';
+					foreach($storage['racks'] as $rack) {
+						$rack_id=renderRackID($rack);
+						$rack_title=$rack['rack_name'].' ('.$rack_id.')';
+						$rackdata[]=$rack_title.'<br><img alt="'.$rack_title.'" src="barcode.php?text='.$rack_id.'&print=true&size=100">';
+					}
+					for($row=0;$row<$rows;$row++) {
+						$data[]=array_slice($rackdata,$row*$columns,$columns);
+					}
+				} else {
+					$table_title='Racks <a href="storage_view.php?id='.$_GET['id'].'&view=labels"><i class="fi-thumbnails"></i></a>';
+					foreach($storage['racks'] as $rack) {
+						$rack_id=renderRackID($rack);
+						$data[]=array(
+							'identifier'	=> "<a href=\"rack_view.php?id=$rack_id\"><code>".$rack_id.'</code>', 
+							'name'			=> $rack['rack_name'], 
+							'description'	=> $rack['rack_description'], 
+							'status'		=> formatStorageStatus($rack['rack_status']), 
+							'columns'		=> $rack['cols'], 
+							'rows'			=> $rack['rows'], 
+							'slots'			=> $rack['slots'], 
+							'edit'			=> "<a href=\"rack_edit.php?id=$rack_id\"><i class=\"fi-widget\"></i></a>"
+						);
+					}
 				}
 			} else {
 				$data=array();
 			}
 
-			$racks=new htmlTable('Racks');
+			$racks=new htmlTable($table_title);
 			$racks->addData($data);
 			$rackhtml=$racks->render();
 			
