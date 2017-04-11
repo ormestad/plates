@@ -720,6 +720,7 @@ function showProjectData($project) {
 		$list->listItem('Project status: '.$status['html']);
 		$list->listItem('Input material: '.$libprepdata['input']);
 		$list->listItem('Library prep: '.$libprepdata['type']);
+		$list->listItem('Sequencing: '.$project['udf']['Sequencing platform'].' ('.$project['udf']['Sequencing setup'].')');
 		
 		$card->divider('<strong>Selected project</strong> '.$project['limsid'].', '.$project['name'].' ('.$project['udf']['Customer project reference'].")");
 		$card->section($list->render());
