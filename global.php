@@ -142,17 +142,21 @@ function plateAdd($plate,$position,$user_email) {
 	if($position_data=parsePosition($position)) {
 		if($position_data['type']=='position') {
 			$rack=getRack($position_data['rack_id']);
-			$message="Plate added to rack ".$rack['data']['rack_name']." in ".$rack['storage']['storage_type']." ".$rack['storage']['storage_name']." (".$rack['storage']['storage_location'].")";
-			$log=addLog($message,"add",$position,$user_email);
-			$add=sql_query("INSERT INTO plates SET 
-				plate_id='$plate', 
-				status='checked_in', 
-				rack_id=".$position_data['rack_id'].", 
-				col=".$position_data['xpos'].", 
-				row=".$position_data['ypos'].", 
-				log='$log'");
-			if($add) {
-				return TRUE;
+			if(!$rack['error']) {
+				$message="Plate added to rack ".$rack['data']['rack_name']." in ".$rack['storage']['storage_type']." ".$rack['storage']['storage_name']." (".$rack['storage']['storage_location'].")";
+				$log=addLog($message,"add",$position,$user_email);
+				$add=sql_query("INSERT INTO plates SET 
+					plate_id='$plate', 
+					status='checked_in', 
+					rack_id=".$position_data['rack_id'].", 
+					col=".$position_data['xpos'].", 
+					row=".$position_data['ypos'].", 
+					log='$log'");
+				if($add) {
+					return TRUE;
+				} else {
+					return FALSE;
+				}
 			} else {
 				return FALSE;
 			}
@@ -211,19 +215,23 @@ function plateCheckIn($plate_data,$position,$user_email) {
 	if($position_data=parsePosition($position)) {
 		if($position_data['type']=='position') {
 			$rack=getRack($position_data['rack_id']);
-			$message="Plate checked in to rack ".$rack['data']['rack_name']." in ".$rack['storage']['storage_type']." ".$rack['storage']['storage_name']." (".$rack['storage']['storage_location'].")";
-			$log=addLog($message,"check_in",$position,$user_email,$plate_data['log']);
-	
-			$update=sql_query("UPDATE plates SET 
-				status='checked_in', 
-				rack_id=".$position_data['rack_id'].", 
-				col=".$position_data['xpos'].", 
-				row=".$position_data['ypos'].", 
-				log='$log' 
-				WHERE plate_id='".$plate_data['plate_id']."'");
-	
-			if($update) {
-				return TRUE;
+			if(!$rack['error']) {
+				$message="Plate checked in to rack ".$rack['data']['rack_name']." in ".$rack['storage']['storage_type']." ".$rack['storage']['storage_name']." (".$rack['storage']['storage_location'].")";
+				$log=addLog($message,"check_in",$position,$user_email,$plate_data['log']);
+		
+				$update=sql_query("UPDATE plates SET 
+					status='checked_in', 
+					rack_id=".$position_data['rack_id'].", 
+					col=".$position_data['xpos'].", 
+					row=".$position_data['ypos'].", 
+					log='$log' 
+					WHERE plate_id='".$plate_data['plate_id']."'");
+		
+				if($update) {
+					return TRUE;
+				} else {
+					return FALSE;
+				}
 			} else {
 				return FALSE;
 			}
