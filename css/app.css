@@ -52,6 +52,24 @@ table caption {
 	background-color: #eee;
 }
 
+table a i {
+	color: black;
+}
+
+.top-bar, .top-bar ul {
+	background-color: #59abe3;
+}
+
+.top-bar a {
+	color: white;
+}
+
+.button, .label {
+	-webkit-border-radius: 5px; 
+	-moz-border-radius: 5px; 
+	border-radius: 5px; 
+}
+
 /* --- Color styles for project status, mimics Foundation default label styles --- */
 
 .pending {
