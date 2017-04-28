@@ -11,7 +11,9 @@ if(isset($_POST['submit'])) {
 	}
 
 	// Check user
-	if($user=checkUser($user_email)) {
+	$USER->validateUser($_POST['user_hash']);
+	if($USER->auth>0) {
+		$user=$USER->data;
 		if(filter_var($storage_id,FILTER_VALIDATE_INT)) {
 			// Add new item
 			$log=addLog('Adding new rack','add',renderStorageID($storage_id),$user['user_email']);
@@ -135,7 +137,7 @@ if(isset($_GET['id']) || isset($id)) {
 			$theform->addInput('Slots (number of plates in each rack position)',array('type' => 'number', 'name' => 'slots', 'value' => 0));
 		}
 	
-		$theform->addInput('Operator (use your scilifelab email address)',array('type' => 'email', 'name' => 'user_email', 'value' => $user['user_email']));
+		$theform->addInput('Operator',array('type' => 'password', 'name' => 'user_hash', 'value' => '', 'autocomplete' => 'off'));
 		$theform->addInput(FALSE,array('type' => 'submit', 'name' => 'submit', 'value' => $submit, 'class' => 'button'));
 	}
 	$theform->addInput(FALSE,array('type' => 'submit', 'name' => 'cancel', 'value' => 'Cancel', 'class' => 'secondary button'));

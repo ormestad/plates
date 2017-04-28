@@ -10,7 +10,9 @@ if(isset($_POST['submit'])) {
 	}
 
 	// Check user
-	if($user=checkUser($user_email)) {
+	$USER->validateUser($_POST['user_hash']);
+	if($USER->auth>0) {
+		$user=$USER->data;
 		if(isset($storage_id)) {
 			// Edit item
 			if($storage_data=sql_fetch("SELECT * FROM storage WHERE storage_id=$storage_id")) {
@@ -118,7 +120,7 @@ if($showform) {
 	$theform->addSelect('Type','storage_type',array('fridge' => 'Fridge', 'freezer' => 'Freezer'), array($storage['data']['storage_type']));
 	$theform->addInput('Temperature',array('type' => 'number', 'name' => 'storage_temp', 'value' => $storage['data']['storage_temp']));
 	$theform->addInput('Location',array('type' => 'text', 'name' => 'storage_location', 'value' => $storage['data']['storage_location']));
-	$theform->addInput('Operator (use your scilifelab email address)',array('type' => 'email', 'name' => 'user_email', 'value' => $user['user_email']));
+	$theform->addInput('Operator',array('type' => 'password', 'name' => 'user_hash', 'value' => '', 'autocomplete' => 'off'));
 	$theform->addInput(FALSE,array('type' => 'submit', 'name' => 'submit', 'value' => $submit, 'class' => 'button'));
 }
 

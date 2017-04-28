@@ -3,8 +3,10 @@ require 'global.php';
 
 $ALERTS=array();
 
-if(isset($_POST['user_email'])) {
-	if($user=checkUser($_POST['user_email'])) {
+if(isset($_POST['user_hash'])) {
+	$USER->validateUser($_POST['user_hash']);
+	if($USER->auth>0) {
+		$user=$USER->data;
 		if($plate=parseQuery($_POST['plate'])) {
 			if(isset($_POST['submit'])) {
 				$plate_data=sql_fetch("SELECT * FROM plates WHERE plate_id='".$plate['name']."' LIMIT 1");
@@ -141,7 +143,7 @@ if($plate['name']) {
 	$html=showPlateData($plate);
 	
 	// Hidden form fields with plate and user info
-	$theform->addInput(FALSE,array("type" => "hidden", "name" => "user_email", "value" => $user['user_email']));
+	$theform->addInput(FALSE,array("type" => "hidden", "name" => "user_hash", "value" => $user['user_hash']));
 	$theform->addInput(FALSE,array("type" => "hidden", "name" => "plate", "value" => $plate['name']));
 	
 	if($plate_data) {
@@ -184,14 +186,14 @@ if($plate['name']) {
 	if($plate['search']) {
 		// There are search matches but no plate selected
 		$html=$plate['search']['html'];
-		$theform->addInput("Operator (use your SciLifeLab email address)",array("type" => "text", "name" => "user_email", "value" => $user['user_email'], "required" => "", "id" => "user_email", "autocomplete" => "off"));
+		$theform->addInput("Operator",array("type" => "password", "name" => "user_hash", "value" => $user['user_hash'], "required" => "", "id" => "user_hash", "autocomplete" => "off"));
 		$theform->addInput("Plate",array("type" => "text", "name" => "plate", "value" => $plate, "id" => "plate", "autocomplete" => "off"));
 		$theform->addInput(FALSE,array("type" => "submit", "name" => "submit", "value" => "Next", "class" => "button"));
 		$theform->addInput(FALSE,array("type" => "submit", "name" => "cancel", "value" => "Cancel", "class" => "secondary button"));
 	} else {
 		// Default view, no search matches and no plate selected
 		$theform->addText('Manage plates by scanning plate barcode or search using plate/project ID or name.');
-		$theform->addInput("Operator (use your SciLifeLab email address)",array("type" => "text", "name" => "user_email", "value" => "", "required" => "", "id" => "user_email", "autocomplete" => "off"));
+		$theform->addInput("Operator (scan your personal barcode)",array("type" => "password", "name" => "user_hash", "value" => "", "required" => "", "id" => "user_hash", "autocomplete" => "off"));
 		$theform->addInput("Plate",array("type" => "text", "name" => "plate", "value" => $plate, "required" => "", "id" => "plate", "autocomplete" => "off"));
 		$theform->addInput(FALSE,array("type" => "submit", "name" => "submit", "value" => "Next", "class" => "button"));
 	}

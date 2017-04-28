@@ -53,6 +53,11 @@ The necessary credentials for connecting to database, LIMS and StatusDB is added
 				'users'		=> '', 
 				'projects'	=> ''
 			)
+		), 
+		'uservalidation' => array(
+			'salt'				=> '', 
+			'useallowedlist'	=> TRUE, 
+			'roles'				=> array('Disabled','User','Manager','Administrator')
 		)
 	);
 	?>

@@ -11,7 +11,9 @@ if(isset($_POST['submit'])) {
 	}
 
 	// Check user
-	if($user=checkUser($user_email)) {
+	$USER->validateUser($_POST['user_hash']);
+	if($USER->auth>0) {
+		$user=$USER->data;
 		if(filter_var($rack_id,FILTER_VALIDATE_INT)) {
 			if($rack_data=sql_fetch("SELECT * FROM racks WHERE rack_id=$rack_id")) {
 				$id=renderRackID($rack_id);
@@ -75,7 +77,7 @@ if(isset($_GET['id']) || isset($id)) {
 		$theform->addInput('Current storage unit',array('type' => 'text', 'name' => 'cols', 'value' => $rack['storage']['storage_name'], 'disabled' => 'disabled'));
 		$theform->addSelect('New storage unit','storage_new',$select_data);
 	
-		$theform->addInput('Operator (use your scilifelab email address)',array('type' => 'email', 'name' => 'user_email', 'value' => $user['user_email']));
+		$theform->addInput('Operator',array('type' => 'password', 'name' => 'user_hash', 'value' => '', 'autocomplete' => 'off'));
 		$theform->addInput(FALSE,array('type' => 'submit', 'name' => 'submit', 'value' => 'Move', 'class' => 'button'));
 	}
 	$theform->addInput(FALSE,array('type' => 'submit', 'name' => 'cancel', 'value' => 'Cancel', 'class' => 'secondary button'));

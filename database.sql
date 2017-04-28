@@ -51,3 +51,18 @@ CREATE TABLE `storage` (
   `log` text,
   PRIMARY KEY (`storage_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+
+# Dump of table users
+# ------------------------------------------------------------
+
+DROP TABLE IF EXISTS `users`;
+
+CREATE TABLE `users` (
+  `uid` int(11) NOT NULL AUTO_INCREMENT,
+  `user_email` varchar(100) DEFAULT NULL,
+  `user_hash` char(32) DEFAULT NULL,
+  `user_auth` int(1) DEFAULT NULL,
+  PRIMARY KEY (`uid`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;

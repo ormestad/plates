@@ -4,6 +4,7 @@
 			<li class="menu-text">PlateJuggler</li>
 			<li><a href="index.php">Plates</a></li>
 			<li><a href="storage.php">Storage</a></li>
+			<li><a href="users.php">Users</a></li>
 		</ul>
 	</div>
 

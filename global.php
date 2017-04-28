@@ -2,16 +2,20 @@
 // Load configuration
 require 'config.php';
 
+// Include libraries
+require 'class.clarity.v3.php';
+require 'class.couch.php';
+require 'class.html.php';
+require 'class.uservalidation.php';
+
 //Connect to database
 $DB=new mysqli("p:".$CONFIG['mysql']['server'],$CONFIG['mysql']['user'],$CONFIG['mysql']['pass'],$CONFIG['mysql']['db']);
 if($DB->connect_errno>0){
     die('Unable to connect to database [' . $DB->connect_error . ']');
 }
 
-// Include libraries
-require 'class.clarity.v3.php';
-require 'class.couch.php';
-require 'class.html.php';
+// Initialize user validation
+$USER=new Uservalidation();
 
 //--------------------------------------------------------------------------------------------------
 // Global functions
@@ -861,32 +865,4 @@ function parseLibprep($prep) {
  	
  	return $data;
 }
-
-// Get all users from StatusDB
-function getUsers($user=FALSE) {
-	global $CONFIG;
-	$couch=new Couch($CONFIG['couch']['host'],$CONFIG['couch']['port'],$CONFIG['couch']['user'],$CONFIG['couch']['pass']);
-	$json=$couch->getView($CONFIG['couch']['views']['users']);
-
-    foreach($json->rows as $object) {
-	    $users[$object->key]=$object->value;
-    }
-
-    return $users;
-}
-
-// Check if email exists in StatusDB
-function checkUser($user_email) {
-	$users=getUsers();
-    if(filter_var($user_email,FILTER_VALIDATE_EMAIL)) {
-	    if(array_key_exists($user_email,$users)) {
-		    return array("uid" => $users[$user_email], "user_email" => $user_email);
-	    } else {
-		    return FALSE;
-	    }
-    } else {
-	    return FALSE;
-    }
-}
-
 ?>

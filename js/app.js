@@ -27,10 +27,9 @@ $(document).ready(function() {
 	// Automatically focus on first empty input field in all forms
 	$('form').find('*').filter(":input[value='']:visible:first").focus();
 	
-	$("#user_email").on("paste, keyup", function() {
-		var VAL = this.value;
-		var email = new RegExp('^[a-zA-Z-\.]+@scilifelab\.se$');
-		if(email.test(VAL)) {
+	$("#user_hash").on("paste, keyup", function() {
+		var LEN = this.value.length;
+		if(LEN == 32) {
 			$("#plate").focus();
 		}
 	});
