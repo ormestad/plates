@@ -142,22 +142,38 @@ function parseLog($json,$type='plate') {
 }
 
 // Plate name must be validated using parseQuery first
-function plateAdd($plate,$position,$user_email) {
-	if($position_data=parsePosition($position)) {
-		if($position_data['type']=='position') {
-			$rack=getRack($position_data['rack_id']);
-			if(!$rack['error']) {
-				$message="Plate added to rack ".$rack['data']['rack_name']." in ".$rack['storage']['storage_type']." ".$rack['storage']['storage_name']." (".$rack['storage']['storage_location'].")";
-				$log=addLog($message,"add",$position,$user_email);
-				$add=sql_query("INSERT INTO plates SET 
-					plate_id='$plate', 
-					status='checked_in', 
-					rack_id=".$position_data['rack_id'].", 
-					col=".$position_data['xpos'].", 
-					row=".$position_data['ypos'].", 
-					log='$log'");
-				if($add) {
-					return TRUE;
+function plateAdd($plate,$position,$user_email,$batch_file=FALSE) {
+	global $DB;
+	$plate=trim($DB->real_escape_string($plate));
+	// Check if plate already exist
+	if(!$check=sql_fetch("SELECT plate_id FROM plates WHERE plate_id='$plate'")) {
+		if($position_data=parsePosition($position)) {
+			if($position_data['type']=='position') {
+				$rack=getRack($position_data['rack_id']);
+				if(!$rack['error']) {
+					// Check if position is full
+					if(!$rack['layout'][$position_data['ypos']][$position_data['xpos']]['full']) {
+						if($batch_file) {
+							$message="Plate added to rack ".$rack['data']['rack_name']." in ".$rack['storage']['storage_type']." ".$rack['storage']['storage_name']." (".$rack['storage']['storage_location'].") using batch import";
+						} else {
+							$message="Plate added to rack ".$rack['data']['rack_name']." in ".$rack['storage']['storage_type']." ".$rack['storage']['storage_name']." (".$rack['storage']['storage_location'].")";
+						}
+						$log=addLog($message,"add",$position,$user_email);
+						$add=sql_query("INSERT INTO plates SET 
+							plate_id='$plate', 
+							status='checked_in', 
+							rack_id=".$position_data['rack_id'].", 
+							col=".$position_data['xpos'].", 
+							row=".$position_data['ypos'].", 
+							log='$log'");
+						if($add) {
+							return TRUE;
+						} else {
+							return FALSE;
+						}
+					} else {
+						return FALSE;
+					}
 				} else {
 					return FALSE;
 				}
@@ -220,19 +236,24 @@ function plateCheckIn($plate_data,$position,$user_email) {
 		if($position_data['type']=='position') {
 			$rack=getRack($position_data['rack_id']);
 			if(!$rack['error']) {
-				$message="Plate checked in to rack ".$rack['data']['rack_name']." in ".$rack['storage']['storage_type']." ".$rack['storage']['storage_name']." (".$rack['storage']['storage_location'].")";
-				$log=addLog($message,"check_in",$position,$user_email,$plate_data['log']);
-		
-				$update=sql_query("UPDATE plates SET 
-					status='checked_in', 
-					rack_id=".$position_data['rack_id'].", 
-					col=".$position_data['xpos'].", 
-					row=".$position_data['ypos'].", 
-					log='$log' 
-					WHERE plate_id='".$plate_data['plate_id']."'");
-		
-				if($update) {
-					return TRUE;
+				// Check if position is full
+				if(!$rack['layout'][$position_data['ypos']][$position_data['xpos']]['full']) {
+					$message="Plate checked in to rack ".$rack['data']['rack_name']." in ".$rack['storage']['storage_type']." ".$rack['storage']['storage_name']." (".$rack['storage']['storage_location'].")";
+					$log=addLog($message,"check_in",$position,$user_email,$plate_data['log']);
+			
+					$update=sql_query("UPDATE plates SET 
+						status='checked_in', 
+						rack_id=".$position_data['rack_id'].", 
+						col=".$position_data['xpos'].", 
+						row=".$position_data['ypos'].", 
+						log='$log' 
+						WHERE plate_id='".$plate_data['plate_id']."'");
+			
+					if($update) {
+						return TRUE;
+					} else {
+						return FALSE;
+					}
 				} else {
 					return FALSE;
 				}
@@ -434,14 +455,14 @@ function getRack($rack_id,$plate_id=FALSE,$xpos=FALSE,$ypos=FALSE) {
 					
 					// the key 'full' will be set if number of plates equals number of slots (if slots is set)
 					// OR if the rack_status is set to disabled, all cells will be defined as full
-					$cells[]=array(
+					$cells[$col]=array(
 						'position'	=> $position, 
 						'plates'	=> $plates, 
 						'selected'	=> ($col==$xpos && $row==$ypos), 
 						'full'		=> ((count($plates)==$rack_data['slots'] && $rack_data['slots']>0) || ($rack_data['rack_status']=='disabled'))
 					);
 				}
-				$layout[]=$cells;
+				$layout[$row]=$cells;
 			}
 		} else {
 			// Rack does not exist

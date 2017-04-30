@@ -90,4 +90,48 @@ $(document).ready(function() {
 			$("#query_data").html("");
 		}
 	});
+
+	// http://stackoverflow.com/questions/4220126/run-javascript-function-when-user-finishes-typing-instead-of-on-key-up	
+	var typingTimer;				//timer identifier
+	var doneTypingInterval = 200;	//time in ms
+	
+	//on keyup, start the countdown
+	$('#batch_data').on('keyup', function (e) {
+		clearTimeout(typingTimer);
+		typingTimer = setTimeout(doneTyping, doneTypingInterval);
+	});
+	
+	//on keydown, clear the countdown 
+	$('#batch_data').on('keydown', function () {
+		clearTimeout(typingTimer);
+	});
+	
+	//user is "finished typing," do something
+	function doneTyping() {
+		var request=$.ajax({
+			url: "_batchimport.php", 
+			method: "POST", 
+			data: { barcode : $("#batch_data").val(), filename : $("input[name=filename]").val(), uid : $("input[name=uid]").val() }, 
+			dataType: "json"
+		});
+	
+		request.done(function(json) {
+			// PHP script will validate data and write to temp file
+			if(json.error) {
+				$("#batch_data").val('');
+				$("#batch_message").html(json.error);
+			} else {
+				if(json.position) {
+					// We have been returned a plate,postion value pair
+					$("#batch_data").val('');
+					$("#batch_list").append(json.html);
+					$("#batch_message").html('Plate and position recorded');
+				} else {
+					// First part, plate barcode
+					$("#batch_data").val(json.plate);
+					$("#batch_message").html('Plate scanned');
+				}
+			}
+		});
+	}
 });

@@ -48,6 +48,11 @@ if($USER->auth>0) {
 	$card->section('This is your login barcode: <br><br><img src="barcode.php?text='.$USER->data['user_hash'].'&size=40" style="width: 300px;">');
 	$html=$card->render();
 
+	$tools=new zurbCard();
+	$tools->divider('Tools');
+	$tools->section('<a href="batch_import.php?uid='.$USER->data['uid'].'" class="button"><i class="fi-arrow-up"></i> Batch import plates by scanning barcodes</a>');
+	$html.=$tools->render();
+
 	$users=$USER->listUsers();
 	
 	if(count($users)>0) {
