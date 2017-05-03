@@ -1,8 +1,6 @@
 <?php
 require 'global.php';
 
-$ALERTS=array();
-
 if(isset($_POST['user_hash'])) {
 	$USER->validateUser($_POST['user_hash']);
 	if($USER->auth>0) {
@@ -19,13 +17,13 @@ if(isset($_POST['user_hash'])) {
 						if(isset($_POST['plate_verify'])) {
 							if($plate['name']==$_POST['plate_verify']) {
 								if(plateCheckOut($plate_data,$user['user_email'])) {
-									$ALERTS[]=setAlerts("Plate checked out","success");
+									$ALERTS->setAlert('Plate checked out','success');
 									$plate=FALSE;
 								} else {
-									$ALERTS[]=setAlerts("Could not check out plate!");
+									$ALERTS->setAlert('Could not check out plate!','error');
 								}
 							} else {
-								$ALERTS[]=setAlerts("Plate name does not match!");
+								$ALERTS->setAlert('Plate name does not match!','error');
 							}
 						}
 					} elseif($plate_data['status']=="checked_out") {
@@ -33,10 +31,10 @@ if(isset($_POST['user_hash'])) {
 						// Show previous position!
 						if(isset($_POST['position'])) {
 							if(plateCheckIn($plate_data,$_POST['position'],$user['user_email'])) {
-								$ALERTS[]=setAlerts("Plate was checked in successfully","success");
+								$ALERTS->setAlert('Plate was checked in successfully','success');
 								$plate=FALSE;
 							} else {
-								$ALERTS[]=setAlerts("Could not check in plate!");
+								$ALERTS->setAlert('Could not check in plate!','error');
 							}
 						}
 					}
@@ -45,11 +43,12 @@ if(isset($_POST['user_hash'])) {
 					// If position is set, proceed with adding plate
 					if(isset($_POST['position'])) {
 						// Check in new plate (add)
-						if(plateAdd($plate['name'],$_POST['position'],$user['user_email'])) {
-							$ALERTS[]=setAlerts("Plate was added successfully","success");
+						$addplate=plateAdd($plate['name'],$_POST['position'],$user['user_email']);
+						if(!$addplate['error']) {
+							$ALERTS->setAlert('Plate was added successfully','success');
 							$plate=FALSE;
 						} else {
-							$ALERTS[]=setAlerts("Could not add plate!");
+							$ALERTS->setAlert($addplate['error'],'error');
 						}
 					}
 				}
@@ -59,13 +58,13 @@ if(isset($_POST['user_hash'])) {
 					if(isset($_POST['plate_verify'])) {
 						if($plate['name']==$_POST['plate_verify']) {
 							if(plateCheckOut($plate_data,$user['user_email'],'return')) {
-								$ALERTS[]=setAlerts("Plate checked out for returning to user, this means a plate with the same name can not be checked in again","warning");
+								$ALERTS->setAlert("Plate checked out for returning to user, this means a plate with the same name can not be checked in again","warning");
 								$plate=FALSE;
 							} else {
-								$ALERTS[]=setAlerts("Could not check out plate!");
+								$ALERTS->setAlert('Could not check out plate!','error');
 							}
 						} else {
-							$ALERTS[]=setAlerts("Plate name does not match!");
+							$ALERTS->setAlert('Plate name does not match!');
 						}
 					}
 				}
@@ -75,13 +74,13 @@ if(isset($_POST['user_hash'])) {
 					if(isset($_POST['plate_verify'])) {
 						if($plate['name']==$_POST['plate_verify']) {
 							if(plateCheckOut($plate_data,$user['user_email'],'destroy')) {
-								$ALERTS[]=setAlerts("Plate checked out for destruction, this means a plate with the same name can not be checked in again","warning");
+								$ALERTS->setAlert('Plate checked out for destruction, this means a plate with the same name can not be checked in again','warning');
 								$plate=FALSE;
 							} else {
-								$ALERTS[]=setAlerts("Could not check out plate!");
+								$ALERTS->setAlert('Could not check out plate!','error');
 							}
 						} else {
-							$ALERTS[]=setAlerts("Plate name does not match!");
+							$ALERTS->setAlert('Plate name does not match!','error');
 						}
 					}
 				}
@@ -90,11 +89,11 @@ if(isset($_POST['user_hash'])) {
 			}
 		} else {
 			$plate=FALSE;
-			$ALERTS[]=setAlerts("Invalid query: ".$_POST['plate']);
+			$ALERTS->setAlert("Invalid query: ".$_POST['plate'],'warning');
 		}
 	} else {
 		$plate=FALSE;
-		$ALERTS[]=setAlerts("Invalid user name");
+		$ALERTS->setAlert('Invalid user name','warning');
 	}
 } else {
 	$plate=FALSE;
@@ -170,7 +169,7 @@ if($plate['name']) {
 		}
 	} else {
 		// Check in of new plate
-		$ALERTS[]=setAlerts("Plate does not exist in plate database");
+		$ALERTS->setAlert('Plate does not exist in plate database','warning');
 		$html.=$plate['search']['html'];
 		// position field controlled by jQuery Regex that trigger AJAX request of conditional position information to #rackview div below
 		$theform->addInput("Position",array("type" => "text", "name" => "position", "value" => "", "id" => "position", "autocomplete" => "off"));

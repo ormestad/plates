@@ -1,8 +1,6 @@
 <?php
 require 'global.php';
 
-$ALERTS=array();
-
 if(isset($_GET['id'])) {
 	if($position=parsePosition($_GET['id'])) {
 		$rack=getRack($position['rack_id']);

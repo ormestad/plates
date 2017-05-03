@@ -1,9 +1,7 @@
 <?php
 require 'global.php';
-$ALERTS=array();
 
 $user_list=$USER->listUsers();
-
 if(count($user_list)>0) {
 	foreach($user_list as $user) {
 		$data[]=array(

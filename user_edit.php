@@ -1,6 +1,5 @@
 <?php
 require 'global.php';
-$ALERTS=array();
 
 if(isset($_POST['submit'])) {
 	if(isset($_POST['pwd'])) {
@@ -14,14 +13,14 @@ if(isset($_POST['submit'])) {
 				$update=$USER->editUser($_POST['edit_email'],array('user_auth' => $_POST['edit_auth']));
 				if($update['error']) {
 					// An error occured
-					$ALERTS[]=setAlerts($update['error']);
+					$ALERTS->setAlert($update['error']);
 				} else {
 					if($update['data']) {
 						// User was updated successfully
-						$ALERTS[]=setAlerts('User information updated for: '.$_POST['edit_email'],'success');
+						$ALERTS->setAlert('User information updated for: '.$_POST['edit_email'],'success');
 					} else {
 						// No data was changed
-						$ALERTS[]=setAlerts('Data not different, user not updated: '.$_POST['edit_email'],'success');
+						$ALERTS->setAlert('Data not different, user not updated: '.$_POST['edit_email'],'success');
 					}
 				}
 			}
@@ -31,11 +30,11 @@ if(isset($_POST['submit'])) {
 		$add=$USER->addUser($_POST['user_email'],$_POST['pwd1'],$_POST['pwd2']);
 		if($add['error']) {
 			// An error occured
-			$ALERTS[]=setAlerts($add['error']);
+			$ALERTS->setAlert($add['error']);
 		} else {
 			// User added successfully, log in user
 			$USER->login($_POST['user_email'],$_POST['pwd1']);
-			$ALERTS[]=setAlerts('User added','success');
+			$ALERTS->setAlert('User added','success');
 		}
 	}
 }

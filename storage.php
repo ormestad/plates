@@ -1,8 +1,6 @@
 <?php
 require 'global.php';
 
-$ALERTS=array();
-
 $storage_query=sql_query("SELECT * FROM storage");
 if($storage_query->num_rows>0) {
 	while($storage=$storage_query->fetch_assoc()) {

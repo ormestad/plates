@@ -16,4 +16,4 @@
 	</div>
 </div>
 
-<?php echo formatAlerts($ALERTS); ?>
+<?php echo $ALERTS->render(); ?>

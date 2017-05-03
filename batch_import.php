@@ -1,6 +1,5 @@
 <?php
 require 'global.php';
-$ALERTS=array();
 $imported=FALSE;
 $errors=array();
 
@@ -23,8 +22,9 @@ if(isset($_POST['submit'])) {
 				if($rack_id==$position['rack_id']) {
 					$plate=parseQuery($data[0]);
 					if($plate['name']) {
-						if(!plateAdd($plate['name'],$data[1],$USER->data['user_email'],$filename)) {
-							$errors[]=array('message' => 'Could not add plate '.$data[0].' to position '.$data[1], 'data' => $data);
+						$addplate=plateAdd($plate['name'],$data[1],$USER->data['user_email'],$filename);
+						if($addplate['error']) {
+							$errors[]=array('message' => 'Could not add plate '.$data[0].' to position '.$data[1].': '.$addplate['error'], 'data' => $data);
 						}
 					} else {
 						$errors[]=array('message' => 'Invalid plate name: '.$data[0].', plate not added to position '.$data[1], 'data' => $data);
@@ -39,9 +39,11 @@ if(isset($_POST['submit'])) {
 			$imported=TRUE;
 		} else {
 			// Could not open file
+			$ALERTS->setAlert('Could not open file','error');
 		}
 	} else {
 		// Not authorized
+		$ALERTS->setAlert('Not authorized','warning');
 	}
 }
 
@@ -60,6 +62,7 @@ if($imported) {
 	
 	// Report errors after submit
 	if(count($errors)) {
+		$ALERTS->setAlert('Import generated errors','warning');
 		$html.='<div class="alert callout">Please check the following errors!</div>';
 		foreach($errors as $error) {
 			$html.=$error['message'].'<br>';

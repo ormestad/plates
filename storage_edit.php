@@ -1,8 +1,6 @@
 <?php
 require 'global.php';
 
-$ALERTS=array();
-
 if(isset($_POST['submit'])) {
 	// Clean input
 	foreach($_POST as $key => $value) {
@@ -42,13 +40,13 @@ if(isset($_POST['submit'])) {
 					if($update) {
 						header('Location: storage_view.php?id='.$id);
 					} else {
-						$ALERTS[]=setAlerts("Could not update information for $id");
+						$ALERTS->setAlert("Could not update information for $id");
 					}
 				} else {
 					header('Location: storage_view.php?id='.renderStorageID($storage_id));
 				}
 			} else {
-				$ALERTS[]=setAlerts('Invalid storage ID');
+				$ALERTS->setAlert('Invalid storage ID');
 			}
 		} else {
 			// Add new item
@@ -66,11 +64,11 @@ if(isset($_POST['submit'])) {
 				$storage_id=$DB->insert_id;
 				header('Location: storage_view.php?id='.renderStorageID($storage_id));
 			} else {
-				$ALERTS[]=setAlerts("Could not add information to database");
+				$ALERTS->setAlert("Could not add information to database");
 			}
 		}
 	} else {
-		$ALERTS[]=setAlerts('Invalid user ID');
+		$ALERTS->setAlert('Invalid user ID');
 		$id=isset($storage_id) ? renderStorageID($storage_id) : FALSE;
 	}
 } elseif(isset($_POST['cancel'])) {
@@ -91,14 +89,14 @@ if(isset($_GET['id']) || isset($id)) {
 		$storage_id=$position['storage_id'];
 		$storage=getStorage($storage_id);
 		if($storage['error']) {
-			$ALERTS[]=setAlerts($storage['error']);
+			$ALERTS->setAlert($storage['error']);
 		} else {
 			$showform=TRUE;
 			$submit='Save';
 			$theform->addInput(FALSE,array('type' => 'hidden', 'name' => 'storage_id', 'value' => $storage_id));
 		}
 	} else {
-		$ALERTS[]=setAlerts('Invalid storage ID');
+		$ALERTS->setAlert('Invalid storage ID');
 	}
 } else {
 	// Add new storage unit

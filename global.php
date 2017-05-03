@@ -7,6 +7,7 @@ require 'class.clarity.v3.php';
 require 'class.couch.php';
 require 'class.html.php';
 require 'class.uservalidation.php';
+require 'class.alerthandler.php';
 
 //Connect to database
 $DB=new mysqli("p:".$CONFIG['mysql']['server'],$CONFIG['mysql']['user'],$CONFIG['mysql']['pass'],$CONFIG['mysql']['db']);
@@ -16,6 +17,9 @@ if($DB->connect_errno>0){
 
 // Initialize user validation
 $USER=new Uservalidation();
+
+// Initialize alert handler
+$ALERTS=new alertHandler();
 
 //--------------------------------------------------------------------------------------------------
 // Global functions
@@ -39,31 +43,6 @@ function sql_fetch($sql) {
 	}
 }
 
-function setAlerts($text,$type='alert') {
-	$types=array("alert","success");
-	if(trim($text)!="") {
-		$type=in_array($type,$types) ? $type : 'alert';
-		$result=array(
-			'type' => $type, 
-			'text' => $text
-		);
-	} else {
-		$result=FALSE;
-	}
-	return $result;
-}
-
-function formatAlerts($alerts) {
-	$html='';
-	if(count($alerts)) {
-		foreach($alerts as $key => $alert_data) {
-			$html.="<div class=\"callout ".$alert_data['type']."\">".$alert_data['text']."</div>\n";
-		}
-	}
-	return $html;
-}
-
-// Consider making more user friendly messages, e.g. parse position to write out storage and rack names
 function addLog($message,$action,$position,$user_email,$json=FALSE) {
 	if(trim($message)!="") {
 		$log=json_decode($json,TRUE);
@@ -167,25 +146,26 @@ function plateAdd($plate,$position,$user_email,$batch_file=FALSE) {
 							row=".$position_data['ypos'].", 
 							log='$log'");
 						if($add) {
-							return TRUE;
+							$result=array('error' => FALSE, 'plate_id' => $plate);
 						} else {
-							return FALSE;
+							$result=array('error' => 'Could not add to database', 'plate_id' => $plate);
 						}
 					} else {
-						return FALSE;
+						$result=array('error' => 'Position is already full', 'plate_id' => $plate);
 					}
 				} else {
-					return FALSE;
+					$result=array('error' => $rack['error'], 'plate_id' => $plate);
 				}
 			} else {
-				return FALSE;
+				$result=array('error' => 'Please use a valid rack position', 'plate_id' => $plate);
 			}
 		} else {
-			return FALSE;
+			$result=array('error' => 'Invalid position', 'plate_id' => $plate);
 		}
 	} else {
-		return FALSE;
+		$result=array('error' => 'A plate with that name already exist', 'plate_id' => $plate);
 	}
+	return $result;
 }
 
 // $plate_data is the SQL results from querying plate table
@@ -858,11 +838,11 @@ function getProject($lims_id) {
 		if($project=$clarity->getEntity("projects/$lims_id")) {
 			return $project;
 		} else {
-			$ALERTS[]=setAlerts("Project not found: $lims_id");
+			$ALERTS->setAlert("Project not found: $lims_id",'warning');
 			return FALSE;
 		}
 	} else {
-		$ALERTS[]=setAlerts("Invalid format of LIMS ID: $lims_id");
+		$ALERTS->setAlert("Invalid format of LIMS ID: $lims_id",'warning');
 		return FALSE;
 	}
 }

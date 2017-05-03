@@ -1,9 +1,7 @@
 <?php
 require 'global.php';
 
-$ALERTS=array();
 $theform=new htmlForm('storage_edit.php');
-
 if(isset($_POST['submit'])) {
 	// Clean input
 	foreach($_POST as $key => $value) {
@@ -30,7 +28,7 @@ if(isset($_POST['submit'])) {
 			if($add) {
 				header('Location: rack_view.php?id='.renderRackID($DB->insert_id));
 			} else {
-				$ALERTS[]=setAlerts("Could not add information to database");
+				$ALERTS->setAlert("Could not add information to database");
 				$id=renderStorageID($storage_id);
 			}
 		} elseif(filter_var($rack_id,FILTER_VALIDATE_INT)) {
@@ -58,18 +56,18 @@ if(isset($_POST['submit'])) {
 					if($update) {
 						header('Location: rack_view.php?id='.renderRackID($rack_id));
 					} else {
-						$ALERTS[]=setAlerts("Could not update information for ".renderRackID($rack_id));
+						$ALERTS->setAlert("Could not update information for ".renderRackID($rack_id));
 						$id=renderRackID($rack_id);
 					}
 				} else {
 					header('Location: rack_view.php?id='.renderRackID($rack_id));
 				}
 			} else {
-				$ALERTS[]=setAlerts('Invalid rack ID');
+				$ALERTS->setAlert('Invalid rack ID');
 			}
 		}
 	} else {
-		$ALERTS[]=setAlerts('Invalid user ID');
+		$ALERTS->setAlert('Invalid user ID');
 		$id=isset($rack_id) ? renderRackID($rack_id) : renderStorageID($storage_id);
 	}
 } elseif(isset($_POST['cancel'])) {
@@ -94,11 +92,11 @@ if(isset($_GET['id']) || isset($id)) {
 		$storage_id=$position['storage_id'];
 		$storage=getStorage($storage_id);
 		if($storage['error']) {
-			$ALERTS[]=setAlerts($storage['error']);
+			$ALERTS->setAlert($storage['error']);
 		} else {
 			$theform->addInput(FALSE,array('type' => 'hidden', 'name' => 'storage_id', 'value' => $storage_id));
 			if($storage['data']['storage_status']=='disabled') {
-				$ALERTS[]=setAlerts('Racks can not be added to disabled storage units');
+				$ALERTS->setAlert('Racks can not be added to disabled storage units');
 			} else {
 				$showform=TRUE;
 				$theform->addText('Add rack to storage unit '.$storage['data']['storage_name']);
@@ -110,7 +108,7 @@ if(isset($_GET['id']) || isset($id)) {
 		$rack_id=$position['rack_id'];
 		$rack=getRack($rack_id);
 		if($rack['error']) {
-			$ALERTS[]=setAlerts($rack['error']);
+			$ALERTS->setAlert($rack['error']);
 		} else {
 			$showform=TRUE;
 			$theform->addInput(FALSE,array('type' => 'hidden', 'name' => 'rack_id', 'value' => $rack_id));
@@ -143,7 +141,7 @@ if(isset($_GET['id']) || isset($id)) {
 	$theform->addInput(FALSE,array('type' => 'submit', 'name' => 'cancel', 'value' => 'Cancel', 'class' => 'secondary button'));
 	$html=$theform->render();
 } else {
-	$ALERTS[]=setAlerts('No ID provided');
+	$ALERTS->setAlert('No ID provided');
 }
 
 // Render Page

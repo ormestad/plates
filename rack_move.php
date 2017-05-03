@@ -1,9 +1,7 @@
 <?php
 require 'global.php';
 
-$ALERTS=array();
 $theform=new htmlForm('storage_edit.php');
-
 if(isset($_POST['submit'])) {
 	// Clean input
 	foreach($_POST as $key => $value) {
@@ -29,14 +27,14 @@ if(isset($_POST['submit'])) {
 					header('Location: rack_view.php?id='.$id);
 				} else {
 					$id=renderRackID($rack_id);
-					$ALERTS[]=setAlerts("Could not move rack $id");
+					$ALERTS->setAlert("Could not move rack $id");
 				}
 			} else {
-				$ALERTS[]=setAlerts('Invalid rack ID');
+				$ALERTS->setAlert('Invalid rack ID');
 			}
 		}
 	} else {
-		$ALERTS[]=setAlerts('Invalid user ID');
+		$ALERTS->setAlert('Invalid user ID');
 		$id=renderRackID($rack_id);
 	}
 } elseif(isset($_POST['cancel'])) {
@@ -59,7 +57,7 @@ if(isset($_GET['id']) || isset($id)) {
 		$rack_id=$position['rack_id'];
 		$rack=getRack($rack_id);
 		if($rack['error']) {
-			$ALERTS[]=setAlerts($rack['error']);
+			$ALERTS->setAlert($rack['error']);
 		} else {
 			$showform=TRUE;
 			$theform->addInput(FALSE,array('type' => 'hidden', 'name' => 'rack_id', 'value' => $rack_id));
@@ -83,7 +81,7 @@ if(isset($_GET['id']) || isset($id)) {
 	$theform->addInput(FALSE,array('type' => 'submit', 'name' => 'cancel', 'value' => 'Cancel', 'class' => 'secondary button'));
 	$html=$theform->render();
 } else {
-	$ALERTS[]=setAlerts('No ID provided');
+	$ALERTS->setAlert('No ID provided');
 }
 
 // Render Page
