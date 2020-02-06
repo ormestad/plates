@@ -47,27 +47,35 @@ if($USER->auth>0) {
 	$card->section('This is your login barcode: <br><br><img src="barcode.php?text='.$USER->data['user_hash'].'&size=40" style="width: 300px;">');
 	$html=$card->render();
 
-	$tools=new zurbCard();
-	$tools->divider('Tools');
-	$tools->section('<a href="batch_import.php?uid='.$USER->data['uid'].'" class="button"><i class="fi-arrow-up"></i> Batch import plates by scanning barcodes</a>');
-	$html.=$tools->render();
-
-	$users=$USER->listUsers();
-	
-	if(count($users)>0) {
-		foreach($users as $user) {
-			$data[]=array(
-				'email'		=> '<a href="user_edit.php?email='.$USER->data['user_email'].'&edit='.$user['user_email'].'">'.$user['user_email'].'</a>', 
-				'role'		=> $CONFIG['uservalidation']['roles'][$user['user_auth']]
-			);
-		}
-	} else {
-		$data=array();
+	// Batch import of plates
+	// Show only for managers
+	if($USER->auth>1) {
+		$tools=new zurbCard();
+		$tools->divider('Tools');
+		$tools->section('<a href="batch_import.php?uid='.$USER->data['uid'].'" class="button"><i class="fi-arrow-up"></i> Batch import plates by scanning barcodes</a>');
+		$html.=$tools->render();
 	}
-	
-	$table=new htmlTable('List of all registered users, click to edit');
-	$table->addData($data);
-	$html.=$table->render();
+
+	// Edit other users
+	// Show only for admins
+	if($USER->auth>2) {
+		$users=$USER->listUsers();
+		
+		if(count($users)>0) {
+			foreach($users as $user) {
+				$data[]=array(
+					'email'		=> '<a href="user_edit.php?email='.$USER->data['user_email'].'&edit='.$user['user_email'].'">'.$user['user_email'].'</a>', 
+					'role'		=> $CONFIG['uservalidation']['roles'][$user['user_auth']]
+				);
+			}
+		} else {
+			$data=array();
+		}
+		
+		$table=new htmlTable('List of all registered users, click to edit');
+		$table->addData($data);
+		$html.=$table->render();
+	}
 
 } else {
 	// Not logged in

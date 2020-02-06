@@ -9,7 +9,8 @@ if(isset($_POST['submit'])) {
 
 	// Check user
 	$USER->validateUser($_POST['user_hash']);
-	if($USER->auth>0) {
+	// Only available for managers or above
+	if($USER->auth>1) {
 		$user=$USER->data;
 		if(isset($storage_id)) {
 			// Edit item

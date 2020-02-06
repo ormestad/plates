@@ -10,7 +10,8 @@ if(isset($_POST['submit'])) {
 
 	// Check user
 	$USER->validateUser($_POST['user_hash']);
-	if($USER->auth>0) {
+	// Only available for managers or above
+	if($USER->auth>1) {
 		$user=$USER->data;
 		if(filter_var($storage_id,FILTER_VALIDATE_INT)) {
 			// Add new item
