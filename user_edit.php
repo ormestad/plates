@@ -53,6 +53,7 @@ if($USER->auth>0) {
 		$tools=new zurbCard();
 		$tools->divider('Tools');
 		$tools->section('<a href="batch_import.php?uid='.$USER->data['uid'].'" class="button"><i class="fi-arrow-up"></i> Batch import plates by scanning barcodes</a>');
+		$tools->section('<a href="batch_import_file.php?uid='.$USER->data['uid'].'" class="button"><i class="fi-arrow-up"></i> Batch import plates by uploading CSV-file</a>');
 		$html.=$tools->render();
 	}
 
