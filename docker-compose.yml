@@ -1,0 +1,32 @@
+version: "3.8"
+services:
+  # Containter to run Apache and PHP
+  web:
+    container_name: platesdb_web
+    image: webdevops/php-apache:7.4
+    restart: always
+    environment:
+      - WEB_DOCUMENT_ROOT=/var/www/public_html
+    volumes:
+      - .:/var/www/public_html
+    ports:
+      - "8888:80"
+    depends_on:
+      - mysql_db
+
+  # Container for the MySQL database
+  db:
+    container_name: platesdb_db
+    image: mysql:8.0
+    ports:
+      - 3306:3306
+    environment:
+      - MYSQL_ROOT_PASSWORD=gQUL3gWu2F9fxstY23
+      - MYSQL_DATABASE=platesdb
+      - MYSQL_USER=platesdb_admin
+      - MYSQL_PASSWORD=9jHdM4KM3uqD6EtuU7
+    volumes:
+      # Save database locally so that it persists
+      - "/var/lib/mysql:/var/lib/mysql"
+      # Bind path to init SQL file to scaffold DB on first run
+      - ./db_init:/docker-entrypoint-initdb.d/:ro
