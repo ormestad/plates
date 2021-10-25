@@ -349,17 +349,19 @@ function renderStorageID($storage_data) {
 
 function renderRackID($rack_data) {
 	$id=is_array($rack_data) ? $rack_data['rack_id'] : $rack_data;
-	$result='R'.sprintf('%04d',$id).'_';
+	//$result='R'.sprintf('%04d',$id).'_';
+	$result='R'.sprintf('%04d',$id).'X00Y00';
 	return $result;
 }
 
 function parsePosition($position) {
-	if(preg_match("/^R([0-9]{4})X([0-9]{2})Y([0-9]{2})$/",$position,$matches)==1) {
+	if(preg_match("/^R([0-9]{4})X([0-9][1-9])Y([0-9][1-9])$/",$position,$matches)==1) {
 		$rack_id=ltrim($matches[1],"0");
 		$xpos=ltrim($matches[2],"0");
 		$ypos=ltrim($matches[3],"0");
 		return array('type' => 'position', 'rack_id' => $rack_id, 'xpos' => $xpos, 'ypos' => $ypos);
-	} elseif(preg_match("/^R([0-9]{4})_$/",$position,$matches)==1) {
+	} elseif(preg_match("/^R([0-9]{4})X00Y00$/",$position,$matches)==1) {
+	//} elseif(preg_match("/^R([0-9]{4})_$/",$position,$matches)==1) {
 		$rack_id=ltrim($matches[1],"0");
 		return array('type' => 'rack', 'rack_id' => $rack_id);
 	} elseif(preg_match("/^S([0-9]{4})$/",$position,$matches)==1) {

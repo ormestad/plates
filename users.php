@@ -1,5 +1,5 @@
 <?php
-require 'global.php';
+require 'lib/global.php';
 
 $user_list=$USER->listUsers();
 if(count($user_list)>0) {

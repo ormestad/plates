@@ -1,5 +1,5 @@
 <?php
-require 'global.php';
+require 'lib/global.php';
 
 if(isset($_POST['user_hash'])) {
 	$USER->validateUser($_POST['user_hash']);
