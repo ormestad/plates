@@ -1,5 +1,5 @@
 <?php
-require 'global.php';
+require 'lib/global.php';
 $imported=FALSE;
 $errors=array();
 

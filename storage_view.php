@@ -1,5 +1,5 @@
 <?php
-require 'global.php';
+require 'lib/global.php';
 
 if(isset($_GET['id'])) {
 	if($position=parsePosition($_GET['id'])) {

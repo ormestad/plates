@@ -1,5 +1,5 @@
 <?php
-require 'global.php';
+require 'lib/global.php';
 
 $cache='cache/status.json';
 $current_time=time(); 

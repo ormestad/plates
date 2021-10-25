@@ -47,7 +47,7 @@ $(document).ready(function() {
 		var VAL = this.value;
 		var position_storage = new RegExp('^S[0-9]{4}$');
 		var position_rack = new RegExp('^R[0-9]{4}_$');
-		var position_full = new RegExp('^R[0-9]{4}X[0-9]{2}Y[0-9]{2}$');
+		var position_full = new RegExp('^R[0-9]{4}X[0-9][1-9]Y[0-9][1-9]$');
 		
 		if(position_storage.test(VAL) || position_rack.test(VAL) || position_full.test(VAL)) {
 			var request=$.ajax({

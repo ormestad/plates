@@ -1,5 +1,5 @@
 <?php
-require 'global.php';
+require 'lib/global.php';
 
 $storage_query=sql_query("SELECT * FROM storage");
 if($storage_query->num_rows>0) {

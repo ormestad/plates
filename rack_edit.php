@@ -1,5 +1,5 @@
 <?php
-require 'global.php';
+require 'lib/global.php';
 
 $theform=new htmlForm('storage_edit.php');
 if(isset($_POST['submit'])) {
