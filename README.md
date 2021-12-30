@@ -7,7 +7,7 @@ A tool for keeping track of plates used at NGI.
 Storage units (e.g. freezers and fridges), racks and positions within racks all have specific ID's described below:
 
 - Full position barcode: `R[NNNN]X[NN]Y[NN]`
-- Rack location only: `R[NNNN]_`
+- Rack location only: `R[NNNN]X00Y00`
 - Storage unit only: `S[NNNN]`
 
 S: Storage unit, R: Rack, X/Y: position
