@@ -2,6 +2,8 @@
 // Load configuration
 require 'config.php';
 
+session_start();
+
 // Include libraries
 require 'class.clarity.v3.php';
 require 'class.couch.php';

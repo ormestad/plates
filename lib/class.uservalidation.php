@@ -1,34 +1,81 @@
 <?php
 class Uservalidation {
 	public function __construct() {
-		$this->data=FALSE;
-		$this->auth=0;
+		$this->loginCheck();
 	}
-	
-	public function login($email,$pwd) {
-		$hash=$this->generateHash($email,$pwd);
-		if($user=$this->getUser($email)) {
-			if($user['user_hash']==$hash) {
-				return $this->validateUser($hash);
+
+	// Validate user session 
+	private function loginCheck() {
+		if($user=$this->getUser($_SESSION['session_email'])) {
+			if(hash_equals($user['user_hash'],$_SESSION['session_hash'])) {
+				// Successful match
+				$this->data=$user;
+				$this->auth=$user['user_auth'];
+				return TRUE;
 			} else {
+				// Hashes does not match
+				$this->data=FALSE;
+				$this->auth=0;
+				$this->clearSession();
 				return FALSE;
 			}
 		} else {
+			// User doesn't exist
+			$this->data=FALSE;
+			$this->auth=0;
+			$this->clearSession();
 			return FALSE;
 		}
 	}
 	
-	// Validate a user and set class variables
-	public function validateUser($user_hash) {
-		global $DB;
-		$user_hash=$DB->real_escape_string($user_hash);
-		if($user=sql_fetch("SELECT * FROM users WHERE user_hash='$user_hash'")) {
-			$this->data=$user;
-			$this->auth=$user['user_auth'];
-			return TRUE;
+	public function login($email,$pwd) {
+		global $ALERTS;
+		if($email=filter_var($email,FILTER_VALIDATE_EMAIL)) {
+			if($user=$this->getUser($email)) {
+				$hash=$this->generateHash($email,$pwd);
+				if(hash_equals($user['user_hash'],$hash)) {
+					$this->registerUserSession($user);
+					return TRUE;
+				} else {
+					// Hashes does not match
+					$ALERTS->setAlert('Could not log in, please try again or contact the site administrator','warning');
+					return FALSE;
+				}
+			} else {
+				// User does not exist
+				$ALERTS->setAlert('Could not log in, please try again or contact the site administrator','warning');
+				return FALSE;
+			}
 		} else {
+			// Not a valid email address
+			$ALERTS->setAlert('Not a valid email address','error');
 			return FALSE;
 		}
+	}
+
+	// Alternative login using barcode of user hash
+	public function login_alt($hash) {
+		global $ALERTS;
+		if($user=$this->getUser($hash)) {
+			return $this->registerUserSession($user);
+		} else {
+			// User does not exist
+			$ALERTS->setAlert('Could not log in, please try again or contact the site administrator','warning');
+			return FALSE;
+		}
+	}
+
+	public function logout() {
+		$this->destroySession();
+		$this->data=FALSE;
+		$this->auth=0;
+	}
+
+	private function registerUserSession($user) {
+		$_SESSION['session_email']=$user['user_email'];
+		$_SESSION['session_hash']=$user['user_hash'];
+		$this->data=$user;
+		$this->auth=$user['user_auth'];
 	}
 	
 	// Get data for specific user (either by email, uid or hash)
@@ -144,7 +191,30 @@ class Uservalidation {
 		$hash=md5($email.$CONFIG['uservalidation']['salt'].$pwd);
 		return $hash;
 	}
+
+	private function clearSession() {
+		// Unset all session variables related to user validation
+		unset($_SESSION['session_email']);
+		unset($_SESSION['session_hash']);
+	}
 	
+	private function destroySession() {
+		$this->clearSession();
+		
+		// If it's desired to kill the session, also delete the session cookie.
+		// Note: This will destroy the session, and not just the session data!
+		if(ini_get("session.use_cookies")) {
+		    $params=session_get_cookie_params();
+		    setcookie(session_name(), '', time() - 42000,
+		        $params["path"], $params["domain"],
+		        $params["secure"], $params["httponly"]
+		    );
+		}
+		
+		// Finally, destroy the session.
+		session_destroy();
+	}
+
 	// --- Optional: check external source for list of allowed users (in this case StatusDB)
 		
 	// Get list of allowed users
