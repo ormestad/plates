@@ -7,11 +7,8 @@ if(isset($_POST['submit'])) {
 		$$key=$DB->real_escape_string($value);
 	}
 
-	// Check user
-	$USER->validateUser($_POST['user_hash']);
 	// Only available for managers or above
 	if($USER->auth>1) {
-		$user=$USER->data;
 		if(isset($storage_id)) {
 			// Edit item
 			if($storage_data=sql_fetch("SELECT * FROM storage WHERE storage_id=$storage_id")) {
@@ -25,7 +22,7 @@ if(isset($_POST['submit'])) {
 				// Only update if the new data is different
 				if(count($updates)) {
 					// Add summary of updates in log message
-					$log=addLog('Update storage information: '.implode(',',$updates),'update',0,$user['user_email'],$storage_data['log']);
+					$log=addLog('Update storage information: '.implode(',',$updates),'update',0,$USER->data['user_email'],$storage_data['log']);
 					
 					$update=sql_query("UPDATE storage SET 
 						storage_name='$storage_name', 
@@ -51,7 +48,7 @@ if(isset($_POST['submit'])) {
 			}
 		} else {
 			// Add new item
-			$log=addLog('Adding new storage','add',0,$user['user_email']);
+			$log=addLog('Adding new storage','add',0,$USER->data['user_email']);
 			$add=sql_query("INSERT INTO storage SET 
 				storage_name='$storage_name', 
 				storage_status='$storage_status', 
@@ -69,7 +66,7 @@ if(isset($_POST['submit'])) {
 			}
 		}
 	} else {
-		$ALERTS->setAlert('Invalid user ID');
+		$ALERTS->setAlert('Not authorised');
 		$id=isset($storage_id) ? renderStorageID($storage_id) : FALSE;
 	}
 } elseif(isset($_POST['cancel'])) {
@@ -119,7 +116,6 @@ if($showform) {
 	$theform->addSelect('Type','storage_type',array('fridge' => 'Fridge', 'freezer' => 'Freezer'), array($storage['data']['storage_type']));
 	$theform->addInput('Temperature',array('type' => 'number', 'name' => 'storage_temp', 'value' => $storage['data']['storage_temp']));
 	$theform->addInput('Location',array('type' => 'text', 'name' => 'storage_location', 'value' => $storage['data']['storage_location']));
-	$theform->addInput('Operator',array('type' => 'password', 'name' => 'user_hash', 'value' => '', 'autocomplete' => 'off'));
 	$theform->addInput(FALSE,array('type' => 'submit', 'name' => 'submit', 'value' => $submit, 'class' => 'button'));
 }
 

@@ -70,6 +70,8 @@ class Clarity {
 
 	public function getList($endpoint) {
 		$xmldata=$this->getXML($endpoint);
+		$results=FALSE;
+		
 		foreach($xmldata as $data) {
 			if($data->getName()=="next-page") {
 				$nextpage=$this->getAttributes($data);

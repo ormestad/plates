@@ -1,21 +1,17 @@
 <?php
 require 'lib/global.php';
 
-$theform=new htmlForm('storage_edit.php');
 if(isset($_POST['submit'])) {
 	// Clean input
 	foreach($_POST as $key => $value) {
 		$$key=$DB->real_escape_string($value);
 	}
 
-	// Check user
-	$USER->validateUser($_POST['user_hash']);
 	// Only available for managers or above
 	if($USER->auth>1) {
-		$user=$USER->data;
 		if(filter_var($storage_id,FILTER_VALIDATE_INT)) {
-			// Add new item
-			$log=addLog('Adding new rack','add',renderStorageID($storage_id),$user['user_email']);
+			// Storage ID given - add new rack
+			$log=addLog('Adding new rack','add',renderStorageID($storage_id),$$USER->data['user_email']);
 			$add=sql_query("INSERT INTO racks SET 
 				rack_name='$rack_name', 
 				rack_status='$rack_status', 
@@ -33,7 +29,7 @@ if(isset($_POST['submit'])) {
 				$id=renderStorageID($storage_id);
 			}
 		} elseif(filter_var($rack_id,FILTER_VALIDATE_INT)) {
-			// Edit item
+			// Rack ID given - edit item
 			if($rack_data=sql_fetch("SELECT * FROM racks WHERE rack_id=$rack_id")) {
 				// Check which values are different from the saved version
 				foreach($rack_data as $key => $value) {
@@ -45,7 +41,7 @@ if(isset($_POST['submit'])) {
 				// Only update if the new data is different
 				if(count($updates)) {
 					// Add summary of updates in log message
-					$log=addLog('Update rack information: '.implode(', ',$updates),'update',renderStorageID($rack_data['storage_id']),$user['user_email'],$rack_data['log']);
+					$log=addLog('Update rack information: '.implode(', ',$updates),'update',renderStorageID($rack_data['storage_id']),$USER->data['user_email'],$rack_data['log']);
 					
 					$update=sql_query("UPDATE racks SET 
 						rack_name='$rack_name', 
@@ -68,7 +64,7 @@ if(isset($_POST['submit'])) {
 			}
 		}
 	} else {
-		$ALERTS->setAlert('Invalid user ID');
+		$ALERTS->setAlert('Not authorised');
 		$id=isset($rack_id) ? renderRackID($rack_id) : renderStorageID($storage_id);
 	}
 } elseif(isset($_POST['cancel'])) {
@@ -81,6 +77,7 @@ if(isset($_POST['submit'])) {
 	}
 }
 
+$theform=new htmlForm('storage_edit.php');
 $storage_id=FALSE;
 $showform=FALSE;
 $html='';
@@ -136,7 +133,6 @@ if(isset($_GET['id']) || isset($id)) {
 			$theform->addInput('Slots (number of plates in each rack position)',array('type' => 'number', 'name' => 'slots', 'value' => 0));
 		}
 	
-		$theform->addInput('Operator',array('type' => 'password', 'name' => 'user_hash', 'value' => '', 'autocomplete' => 'off'));
 		$theform->addInput(FALSE,array('type' => 'submit', 'name' => 'submit', 'value' => $submit, 'class' => 'button'));
 	}
 	$theform->addInput(FALSE,array('type' => 'submit', 'name' => 'cancel', 'value' => 'Cancel', 'class' => 'secondary button'));

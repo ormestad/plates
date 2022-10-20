@@ -2,6 +2,10 @@
 // Load configuration
 require 'config.php';
 
+ini_set('memory_limit','512M');
+
+session_start();
+
 // Include libraries
 require 'class.clarity.v3.php';
 require 'class.couch.php';
@@ -147,6 +151,8 @@ function plateAdd($plate,$position,$user_email,$batch_file=FALSE) {
 							log='$log'");
 						if($add) {
 							$result=array('error' => FALSE, 'plate_id' => $plate);
+							// Force update cached plates so it shows up in searches
+							cachePlates(TRUE);
 						} else {
 							$result=array('error' => 'Could not add to database', 'plate_id' => $plate);
 						}
@@ -248,22 +254,46 @@ function plateCheckIn($plate_data,$position,$user_email) {
 	}
 }
 
-// Fetching all plates from database and optionally cache result in a json file
-function getPlates($cache=FALSE) {
+// Fetching all plates from database
+function getPlates() {
 	$plate_query=sql_query("SELECT plate_id FROM plates");
 	if($plate_query->num_rows>0) {
 		while($plate=$plate_query->fetch_assoc()) {
 			$allplates[]=$plate['plate_id'];
 		}
-
-		if($cache) {
-			file_put_contents($cache, json_encode($allplates));
-		}
-		
 		return $allplates;
 	} else {
 		return FALSE;
 	}
+}
+
+// All plate names can be cached in a file to minimise db requests when autocompleting searches
+// Setting $force_refresh to TRUE will force an update of cached results
+function cachePlates($force_refresh=FALSE) {
+	global $CONFIG;
+	if(file_exists($CONFIG['plates']['platecache'])) {
+		// Cache file exists
+		if(time()-$CONFIG['plates']['platecache_expire']<filemtime($CONFIG['plates']['platecache']) && !$force_refresh) {
+			// Cache has not expired
+			$data=json_decode(file_get_contents($CONFIG['plates']['platecache']));
+		} else {
+			// Time has expired or force update has been requested - generate new cache file
+			if($data=getPlates()) {
+				file_put_contents($CONFIG['plates']['platecache'], json_encode($data));
+			} else {
+				$data=FALSE;
+			}
+		}
+	} else {
+		// Cache file does not exist - generate new cache file
+		if($data=getPlates()) {
+			file_put_contents($CONFIG['plates']['platecache'], json_encode($data));
+		} else {
+			$data=FALSE;
+		}
+	}
+
+	return $data;
 }
 
 function plateFind($query) {
@@ -355,15 +385,16 @@ function renderRackID($rack_data) {
 }
 
 function parsePosition($position) {
-	if(preg_match("/^R([0-9]{4})X([0-9][1-9])Y([0-9][1-9])$/",$position,$matches)==1) {
+	if(preg_match("/^R([0-9]{4})X([0-9]{2})Y([0-9]{2})$/",$position,$matches)==1) {
 		$rack_id=ltrim($matches[1],"0");
 		$xpos=ltrim($matches[2],"0");
 		$ypos=ltrim($matches[3],"0");
-		return array('type' => 'position', 'rack_id' => $rack_id, 'xpos' => $xpos, 'ypos' => $ypos);
-	} elseif(preg_match("/^R([0-9]{4})X00Y00$/",$position,$matches)==1) {
-	//} elseif(preg_match("/^R([0-9]{4})_$/",$position,$matches)==1) {
-		$rack_id=ltrim($matches[1],"0");
-		return array('type' => 'rack', 'rack_id' => $rack_id);
+		if($xpos>0 && $ypos>0) {
+			return array('type' => 'position', 'rack_id' => $rack_id, 'xpos' => $xpos, 'ypos' => $ypos);
+		} else {
+			// Racks are defined as R0001X00Y00
+			return array('type' => 'rack', 'rack_id' => $rack_id);
+		}
 	} elseif(preg_match("/^S([0-9]{4})$/",$position,$matches)==1) {
 		$storage_id=ltrim($matches[1],"0");
 		return array('type' => 'storage', 'storage_id' => $storage_id);
@@ -551,7 +582,7 @@ function parseQuery($query) {
 					// Same format as LIMS project ID but it does not exist in LIMS, not a suitable plate name...
 					$results=FALSE;
 				}
-			} elseif(preg_match("/^[A-Za-z]+\.[A-Za-z]{2,}_?([0-9]{2})?_?([0-9]{2})?/",$query)) {
+			} elseif(validateLimsProjectName($query)) {
 				// Query matches LIMS project name format, search StatusDB projects to see if there are any matches
 				// findProjectByName returns an array with [query],[data],[html]
 				$search=findProjectByName($query);
@@ -586,7 +617,7 @@ function parseQuery($query) {
 // Check both format and existence of a LIMS container based on LIMS container name
 function checkLIMScontainerName($name) {
 	global $CONFIG;
-	$name=trim(filter_var($name,FILTER_SANITIZE_STRING));
+	$name=trim(htmlspecialchars($name));
 	
 	$clarity=new Clarity($CONFIG['clarity']['uri'],$CONFIG['clarity']['user'],$CONFIG['clarity']['pass']);
 	$container=$clarity->getEntity("containers/?name=$name");
@@ -654,7 +685,7 @@ function findProjectByName($query) {
 	$search_results=array_filter($project_names,function($item) use ($query) {
 		return (stripos($item,$query) !== FALSE);
 	});
-	
+
 	$card=new zurbCard();
 	$card->divider(count($search_results).' projects matching search query: '.$query);
 	$list=new htmlList('ul',array('class' => 'no-bullet'));

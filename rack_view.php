@@ -1,27 +1,31 @@
 <?php
 require 'lib/global.php';
 
-if(isset($_GET['id'])) {
-	if($position=parsePosition($_GET['id'])) {
-		$rack=getRack($position['rack_id']);
-		if(!$rack['error']) {
-			$rack_id=renderRackID($rack['data']);
-
-			$table_content=new htmlTable('Content in rack '.$rack['data']['rack_name'],array('class' => 'rack'));
-			$table_content->addData(parseRackLayout($rack['layout']));
-
-			$table_layout=new htmlTable('Layout of rack'.$rack['data']['rack_name'],array('class' => 'rack'));
-			$table_layout->addData(parseRackLayout($rack['layout'],FALSE));
-
-			$log=new htmlTable('Log',array('class' => 'log'));
-			$log->addData(parseLog($rack['data']['log']));
-			$loghtml=$log->render();
+if($USER->auth>0) {
+	if(isset($_GET['id'])) {
+		if($position=parsePosition($_GET['id'])) {
+			$rack=getRack($position['rack_id']);
+			if(!$rack['error']) {
+				$rack_id=renderRackID($rack['data']);
+	
+				$table_content=new htmlTable('Content in rack '.$rack['data']['rack_name'],array('class' => 'rack'));
+				$table_content->addData(parseRackLayout($rack['layout']));
+	
+				$table_layout=new htmlTable('Layout of rack'.$rack['data']['rack_name'],array('class' => 'rack'));
+				$table_layout->addData(parseRackLayout($rack['layout'],FALSE));
+	
+				$log=new htmlTable('Log',array('class' => 'log'));
+				$log->addData(parseLog($rack['data']['log']));
+				$loghtml=$log->render();
+			} else {
+				// Storage ID does not exist
+			}
 		} else {
-			// Storage ID does not exist
+			// Invalid ID format
 		}
-	} else {
-		// Invalid ID format
 	}
+} else {
+	header('Location:index.php');
 }
 
 // Render Page

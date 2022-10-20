@@ -1,23 +1,19 @@
 <?php
 require 'lib/global.php';
 
-$theform=new htmlForm('storage_edit.php');
 if(isset($_POST['submit'])) {
 	// Clean input
 	foreach($_POST as $key => $value) {
 		$$key=$DB->real_escape_string($value);
 	}
 
-	// Check user
-	$USER->validateUser($_POST['user_hash']);
 	// Only available for managers or above
 	if($USER->auth>1) {
-		$user=$USER->data;
 		if(filter_var($rack_id,FILTER_VALIDATE_INT)) {
 			if($rack_data=sql_fetch("SELECT * FROM racks WHERE rack_id=$rack_id")) {
 				$id=renderRackID($rack_id);
 				$newstorage=getStorage($storage_new);
-				$log=addLog('Rack moved to '.$newstorage['data']['storage_name'],'move',renderStorageID($storage_new),$user['user_email'],$rack_data['log']);
+				$log=addLog('Rack moved to '.$newstorage['data']['storage_name'],'move',renderStorageID($storage_new),$USER->data['user_email'],$rack_data['log']);
 				
 				$update=sql_query("UPDATE racks SET 
 					storage_id='$storage_new', 
@@ -35,7 +31,7 @@ if(isset($_POST['submit'])) {
 			}
 		}
 	} else {
-		$ALERTS->setAlert('Invalid user ID');
+		$ALERTS->setAlert('Not authorised');
 		$id=renderRackID($rack_id);
 	}
 } elseif(isset($_POST['cancel'])) {
@@ -76,7 +72,6 @@ if(isset($_GET['id']) || isset($id)) {
 		$theform->addInput('Current storage unit',array('type' => 'text', 'name' => 'cols', 'value' => $rack['storage']['storage_name'], 'disabled' => 'disabled'));
 		$theform->addSelect('New storage unit','storage_new',$select_data);
 	
-		$theform->addInput('Operator',array('type' => 'password', 'name' => 'user_hash', 'value' => '', 'autocomplete' => 'off'));
 		$theform->addInput(FALSE,array('type' => 'submit', 'name' => 'submit', 'value' => 'Move', 'class' => 'button'));
 	}
 	$theform->addInput(FALSE,array('type' => 'submit', 'name' => 'cancel', 'value' => 'Cancel', 'class' => 'secondary button'));
